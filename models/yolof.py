@@ -92,7 +92,7 @@ class YOLOF(nn.Module):
         """img_size: [H, W]"""
         img_h, img_w = img_size
         # check anchor boxes
-        if self.img_size == img_size:
+        if self.img_size and self.img_size == img_size:
             return self.anchor_boxes
         else:
             self.img_size = img_size
@@ -115,7 +115,7 @@ class YOLOF(nn.Module):
         
 
     def nms(self, dets, scores):
-        """"Pure Python NMS YOLOv4."""
+        """"Pure Python NMS."""
         x1 = dets[:, 0]  #xmin
         y1 = dets[:, 1]  #ymin
         x2 = dets[:, 2]  #xmax
