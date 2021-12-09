@@ -142,7 +142,6 @@ def train():
                       device=device, 
                       num_classes=num_classes, 
                       trainable=True, 
-                      anchor_size=cfg['anchor_size'], 
                       post_process=False)
     model = net
     model = model.to(device).train()

@@ -242,7 +242,7 @@ class YOLOF(nn.Module):
             return outputs 
 
 
-def build_model(args, cfg, device, num_classes=80, trainable=False, anchor_size=None, post_process=False):
+def build_model(args, cfg, device, num_classes=80, trainable=False, post_process=False):
     yolof = YOLOF(cfg=cfg,
                   device=device,
                   num_classes=num_classes,
