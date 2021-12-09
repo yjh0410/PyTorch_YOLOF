@@ -229,7 +229,6 @@ def train():
                                                        outputs=outputs,
                                                        targets=targets)
             total_loss = total_loss / args.accumulate
-            print(total_loss)
 
             loss_dict = dict(
                 cls_loss=cls_loss,
