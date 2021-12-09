@@ -41,7 +41,7 @@ def parse_args():
                         help='The min size of the input image')
     parser.add_argument('--start_epoch', type=int, default=0,
                         help='start epoch to train')
-    parser.add_argument('--num_workers', default=4, type=int, 
+    parser.add_argument('--num_workers', default=8, type=int, 
                         help='Number of workers used in dataloading')
     parser.add_argument('--num_gpu', default=1, type=int, 
                         help='Number of GPUs to train')
