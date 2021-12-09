@@ -116,6 +116,7 @@ class PadImage(object):
 
         return pad_image, target, mask
 
+
 # TrainTransform
 class TrainTransforms(object):
     def __init__(self, size=800, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), random_size=False):

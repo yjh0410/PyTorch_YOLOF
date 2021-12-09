@@ -67,8 +67,8 @@ class COCODataset(Dataset):
 
 
     def __getitem__(self, index):
-        image, target = self.pull_item(index)
-        return image, target
+        image, target, mask = self.pull_item(index)
+        return image, target, mask
 
 
     def load_image_target(self, index):
@@ -125,9 +125,9 @@ class COCODataset(Dataset):
         id_ = self.ids[index]
         image, target = self.load_image_target(id_)
         # augment
-        image, target = self.transform(image, target)
+        image, target, mask = self.transform(image, target)
         
-        return image, target
+        return image, target, mask
 
 
     def pull_image(self, index):
