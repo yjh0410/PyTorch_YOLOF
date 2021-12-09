@@ -76,7 +76,7 @@ def parse_args():
     # train trick
     parser.add_argument('--no_warmup', action='store_true', default=False,
                         help='do not use warmup')
-    parser.add_argument('--wp_epoch', type=int, default=1,
+    parser.add_argument('--wp_iter', type=int, default=1500,
                         help='The upper bound of warm-up')
     parser.add_argument('-ms', '--multi_scale', action='store_true', default=False,
                         help='use multi-scale trick')
@@ -200,12 +200,12 @@ def train():
         for iter_i, (images, targets, masks) in enumerate(dataloader):
             ni = iter_i + epoch * epoch_size
             # warmup
-            if epoch < args.wp_epoch and warmup:
-                nw = args.wp_epoch * epoch_size
+            if ni < args.wp_iter and warmup:
+                nw = args.wp_iter
                 tmp_lr = base_lr * pow(ni / nw, 4)
                 set_lr(optimizer, tmp_lr)
 
-            elif epoch == args.wp_epoch and iter_i == 0 and warmup:
+            elif ni == args.wp_iter and warmup:
                 # warmup is over
                 warmup = False
                 tmp_lr = base_lr

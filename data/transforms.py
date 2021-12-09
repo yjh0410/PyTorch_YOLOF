@@ -26,6 +26,7 @@ class Compose(object):
         return image, target, mask
 
 
+# Convert ndarray to tensor
 class ToTensor(object):
     def __call__(self, image, target=None, mask=None):
         # to rgb
@@ -37,6 +38,7 @@ class ToTensor(object):
         return image, target, mask
 
 
+# Color Jitter
 class ColorJitter(object):
     def __init__(self, brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5):
         self.transform = T.ColorJitter(brightness=brightness,
@@ -50,6 +52,7 @@ class ColorJitter(object):
         return image, target, mask
 
 
+# RandomHFlip
 class RandomHorizontalFlip(object):
     def __init__(self, p=0.5):
         self.p = p
@@ -67,6 +70,20 @@ class RandomHorizontalFlip(object):
         return image, target, mask
 
 
+# RandomShift
+class RandomShift(object):
+    def __init__(self, p=0.5, max_shift=32):
+        self.p = p
+        self.max_shift = max_shift
+
+    def __call__(self, image, target=None, mask=None):
+        if random.random() < self.p:
+            pass
+
+        return image, target, mask
+
+
+# Normalize tensor image
 class Normalize(object):
     def __init__(self, mean, std):
         self.mean = mean
@@ -79,6 +96,7 @@ class Normalize(object):
         return image, target, mask
 
 
+# Resize tensor image
 class Resize(object):
     def __init__(self, size=800, max_size=1333, random_size=False):
         self.size = size
@@ -112,6 +130,7 @@ class Resize(object):
         return image, target, mask
 
 
+# Pad tensor image
 class PadImage(object):
     def __init__(self, max_size=1333) -> None:
         self.max_size = max_size
