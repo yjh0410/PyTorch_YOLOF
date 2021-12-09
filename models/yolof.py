@@ -27,7 +27,7 @@ class YOLOF(nn.Module):
         self.post_process = post_process
 
         # backbone
-        self.backbone, feature_channels, self.stride = build_backbone(pretrained=False,
+        self.backbone, feature_channels, self.stride = build_backbone(pretrained=trainable,
                                                                       freeze=trainable,
                                                                       model=cfg['backbone'])
 
