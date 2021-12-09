@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from .box_ops import giou_score
 from .create_labels import label_creator
 
-import time
+
 class FocalWithLogitsLoss(nn.Module):
     def __init__(self, reduction='mean', gamma=2.0, alpha=0.25):
         super(FocalWithLogitsLoss, self).__init__()
@@ -20,6 +20,7 @@ class FocalWithLogitsLoss(nn.Module):
                                                      )
         p_t = p * targets + (1.0 - p) * (1.0 - targets)
         loss = ce_loss * ((1.0 - p_t) ** self.gamma)
+        loss = loss if mask is None else loss * mask[..., None, None]
 
         if self.alpha >= 0:
             alpha_t = self.alpha * targets + (1.0 - self.alpha) * (1.0 - targets)
@@ -30,24 +31,12 @@ class FocalWithLogitsLoss(nn.Module):
             # [B, HW, KA, C] -> [B,]
             num_pos = pos_inds.sum([1, 2, 3]).clamp(1.0)
 
-            if mask is None:
-                # [B, HW, KA, C] -> [B,]
-                loss = loss.sum([1, 2, 3]) / num_pos
-                loss = loss.sum()
-            else:
-                # [B, HW,] -> [B, HW, 1, 1]
-                mask = mask[..., None, None]
-                loss = (loss * mask).sum([1, 2, 3]) / num_pos
-                loss = loss.sum()
+            # [B, HW, KA, C] -> [B,]
+            loss = loss.sum([1, 2, 3]) / num_pos
+            loss = loss.sum()
 
         elif self.reduction == "sum":
-            if mask is None:
-                # [B, HW, KA, C] -> [B,]
-                loss = loss.sum()
-            else:
-                # [B, HW,] -> [B, HW, 1, 1]
-                mask = mask[..., None, None]
-                loss = (loss * mask).sum()
+            loss = loss.sum()
 
         return loss
 
@@ -88,15 +77,10 @@ class SetCriterion(nn.Module):
         pred_giou = giou_score(x1y1x2y2_pred, x1y1x2y2_gt)
         # [B x HW x KA,] -> [B, HW, KA,]
         pred_giou = pred_giou.view(B, HW, KA)
-        loss_giou = 1. - pred_giou
-        if mask is None:
-            loss_reg = (loss_giou * target_pos).sum([1, 2]) / num_pos
-            loss_reg = loss_reg.sum()
-        else:
-            # [B, HW,] -> [B, HW, 1]
-            mask = mask[..., None]
-            loss_reg = (loss_giou * mask * target_pos).sum([1, 2]) / num_pos
-            loss_reg = loss_reg.sum()
+        loss_reg = 1. - pred_giou if mask is None else (1. - pred_giou) * mask[..., None]
+
+        loss_reg = (loss_reg * target_pos).sum([1, 2]) / num_pos
+        loss_reg = loss_reg.sum()
         
         return loss_reg
 
@@ -109,17 +93,12 @@ class SetCriterion(nn.Module):
             target: (tensor) [B, HW, KA, C+4+1]
         """
         # make labels
-        torch.cuda.synchronize()
-        t0 = time.time()
         targets = label_creator(targets=targets, 
                                 anchor_boxes=anchor_boxes, 
                                 num_classes=self.num_classes,
                                 topk=self.cfg['topk'],
                                 igt=self.cfg['ignore_thresh'])
         targets = targets.to(self.device)
-        torch.cuda.synchronize()
-        t1 = time.time()
-        print(t1 - t0)
 
         batch_size = outputs["pred_cls"].size(0)
         # compute class loss
