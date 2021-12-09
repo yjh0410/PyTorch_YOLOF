@@ -53,9 +53,10 @@ class FocalWithLogitsLoss(nn.Module):
 
 
 class SetCriterion(nn.Module):
-    def __init__(self, cfg, loss_cls_weight=1.0, loss_reg_weight=1.0, num_classes=80):
+    def __init__(self, cfg, device, loss_cls_weight=1.0, loss_reg_weight=1.0, num_classes=80):
         super().__init__()
         self.cfg = cfg
+        self.device = device
         self.num_classes = num_classes
         self.loss_cls_weight = loss_cls_weight
         self.loss_reg_weight = loss_reg_weight
@@ -113,6 +114,7 @@ class SetCriterion(nn.Module):
                                 num_classes=self.num_classes,
                                 topk=self.cfg['topk'],
                                 igt=self.cfg['ignore_thresh'])
+        targets = targets.to(self.device)
 
         batch_size = outputs["pred_cls"].size(0)
         # compute class loss
@@ -128,8 +130,9 @@ class SetCriterion(nn.Module):
         return loss_labels, loss_bboxes, losses
 
 
-def build_criterion(args, cfg, num_classes=80):
+def build_criterion(args, cfg, device, num_classes=80):
     criterion = SetCriterion(cfg=cfg,
+                             device=device,
                              loss_cls_weight=args.loss_cls_weight,
                              loss_reg_weight=args.loss_reg_weight,
                              num_classes=num_classes)
