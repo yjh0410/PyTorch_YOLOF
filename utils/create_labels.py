@@ -37,9 +37,7 @@ def compute_iou(anchor_boxes, target_box):
     return iou # [HW x KA]
 
 
-def label_creator(img_size, 
-                  stride, 
-                  targets, 
+def label_creator(targets, 
                   anchor_boxes, 
                   num_classes, 
                   topk=8,
@@ -48,19 +46,20 @@ def label_creator(img_size,
         img_size: (int) the max line of the batch of images.size.
         stride: (int) the output stride of detector.
         targets: (list of tensors) annotations
-        anchor_boxes: (tensor) [1, HW x KA, 4]
+        anchor_boxes: (tensor) [1, HW, KA, 4]
         num_classes: (int) the number of class 
     """
     # prepare
     batch_size = len(targets)
-    img_h = img_w = img_size
-    target_tensor = []
+    num_queries = anchor_boxes.shape[1]
+    anchor_boxes = anchor_boxes.numpy().copy()
     KA = anchor_boxes.shape[-2]
 
-    fmp_h, fmp_w = img_h // stride, img_w // stride
     # [B, HW x KA, cls+box+pos]
-    target_tensor.append(np.zeros([batch_size, fmp_h*fmp_w*KA, num_classes + 4 + 1]))
-        
+    target_tensor = np.zeros([batch_size, num_queries*KA, num_classes + 4 + 1])
+    # [1, HW, KA, 4] -> [1, HW*KA, 4]
+    anchor_boxes = anchor_boxes.reshape(anchor_boxes.shape[0], -1, 4)
+
     # generate gt datas  
     for bi in range(batch_size):
         target_i = targets[bi]
@@ -84,12 +83,13 @@ def label_creator(img_size,
                 iou_score = iou_sorted[k]
                 if iou_score > igt:
                     grid_idx = iou_sorted_idx[k]
+                    target_tensor[bi, grid_idx, :] = 0.0
                     target_tensor[bi, grid_idx, cls_id] = 1.0
                     target_tensor[bi, grid_idx, num_classes:num_classes+4] = np.array([x1, y1, x2, y2])
                     target_tensor[bi, grid_idx, -1] = 1.0
 
     # [B, HW, KA, cls+box+pos]
-    target_tensor = target_tensor.reshape(batch_size, fmp_h*fmp_w, KA,  num_classes + 4 + 1)
+    target_tensor = target_tensor.reshape(batch_size, num_queries, KA,  num_classes + 4 + 1)
     
     return torch.from_numpy(target_tensor).float()
 

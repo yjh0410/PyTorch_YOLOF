@@ -15,12 +15,12 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 
 from data.voc import VOCDetection
 from data.coco import COCODataset
-from config import yolof_config
+from config.yolof_config import yolof_config
 from data.transforms import TrainTransforms, ValTransforms
 
 from utils import distributed_utils
 from utils import create_labels
-from utils.loss import build_criterion
+from utils.criterion import build_criterion
 from utils.com_flops_params import FLOPs_and_Params
 from utils.misc import detection_collate
 
@@ -37,7 +37,7 @@ def parse_args():
                         help='use cuda.')
     parser.add_argument('--batch_size', default=16, type=int, 
                         help='Batch size for training')
-    parser.add_argument('--img_size', type=int, default=640,
+    parser.add_argument('--img_size', type=int, default=800,
                         help='The min size of the input image')
     parser.add_argument('--start_epoch', type=int, default=0,
                         help='start epoch to train')
@@ -52,7 +52,7 @@ def parse_args():
     parser.add_argument('--save_folder', default='weights/', type=str, 
                         help='Gamma update for SGD')
     parser.add_argument('--vis', action='store_true', default=False,
-                        help='visualize target.')
+                        help='visualize targets.')
 
     # model
     parser.add_argument('-v', '--version', default='yolof_r50_C5_1x',
@@ -68,6 +68,11 @@ def parse_args():
     parser.add_argument('-d', '--dataset', default='coco',
                         help='coco, voc, widerface, crowdhuman')
     
+    # Loss
+    parser.add_argument('--loss_cls_weight', default=1.0, type=float,
+                        help='weight of cls loss')
+    parser.add_argument('--loss_reg_weight', default=1.0, type=float,
+                        help='weight of reg loss')
     # train trick
     parser.add_argument('--no_warmup', action='store_true', default=False,
                         help='do not use warmup')
@@ -123,7 +128,7 @@ def train():
     dataloader = build_dataloader(args, dataset, detection_collate)
 
     # criterion
-    criterion = build_criterion(args=args, num_classes=num_classes)
+    criterion = build_criterion(args=args, cfg=cfg, num_classes=num_classes)
     
     print('Training model on:', args.dataset)
     print('The dataset size:', len(dataset))
@@ -131,6 +136,7 @@ def train():
 
     # build model
     net = build_model(args=args, 
+                      cfg=cfg,
                       device=device, 
                       num_classes=num_classes, 
                       trainable=True, 
@@ -170,6 +176,9 @@ def train():
                             momentum=0.9,
                             weight_decay=1e-4)
 
+    # training configuration
+    max_epoch = cfg['max_epoch']
+    lr_epoch = cfg['lr_epoch']
     batch_size = args.batch_size
     epoch_size = len(dataset) // (batch_size * args.num_gpu)
     best_map = -1.
@@ -177,17 +186,17 @@ def train():
 
     t0 = time.time()
     # start training loop
-    for epoch in range(args.start_epoch, args.max_epoch):
+    for epoch in range(args.start_epoch, max_epoch):
         if args.distributed:
             dataloader.sampler.set_epoch(epoch)            
 
         # use step lr decay
-        if epoch in args.lr_epoch:
+        if epoch in lr_epoch:
             tmp_lr = tmp_lr * 0.1
             set_lr(optimizer, tmp_lr)
 
         # train one epoch
-        for iter_i, (images, targets) in enumerate(dataloader):
+        for iter_i, (images, targets, masks) in enumerate(dataloader):
             ni = iter_i + epoch * epoch_size
             # warmup
             if epoch < args.wp_epoch and warmup:
@@ -203,28 +212,21 @@ def train():
 
             # visualize target
             if args.vis:
-                vis_data(images, targets, img_size=args.img_size)
+                vis_data(images, targets, masks)
                 continue
-            # make labels
-            targets = create_labels.label_creator(
-                                    img_size=images.size(-1),
-                                    stride=net.stride, 
-                                    targets=targets, 
-                                    anchor_boxes=net.anchor_boxes, 
-                                    num_classes=num_classes,
-                                    topk=cfg['topk'],
-                                    igt=cfg['ignore_thresh'])
+
             # to device
             images = images.to(device)
-            targets = targets.to(device)
 
             # inference
             cls_scores, bboxes = model(images)
 
             # compute loss
-            cls_loss, reg_loss, total_loss = criterion(pred_cls=cls_scores, 
+            cls_loss, reg_loss, total_loss = criterion(anchor_boxes=net.anchor_boxes,
+                                                       pred_cls=cls_scores, 
                                                        pred_box=bboxes, 
-                                                       target=targets)
+                                                       targets=targets,
+                                                       masks=None)
 
             loss_dict = dict(
                 cls_loss=cls_loss,
@@ -252,7 +254,7 @@ def train():
                 t1 = time.time()
                 print('[Epoch %d/%d][Iter %d/%d][lr %.6f][Loss: cls %.2f || reg %.2f || size (%d, %d) || time: %.2f]'
                         % (epoch+1, 
-                           args.max_epoch, 
+                           max_epoch, 
                            iter_i, 
                            epoch_size, 
                            tmp_lr,
@@ -265,7 +267,7 @@ def train():
                 t0 = time.time()
 
         # evaluation
-        if (epoch + 1) % args.eval_epoch == 0 or (epoch + 1) == args.max_epoch:
+        if (epoch + 1) % args.eval_epoch == 0 or (epoch + 1) == max_epoch:
             model_eval = model.module if args.distributed else model
 
             if evaluator is None:
@@ -377,28 +379,43 @@ def set_lr(optimizer, lr):
         param_group['lr'] = lr
 
 
-def vis_data(images, targets, img_size):
+def vis_data(images, targets, masks):
+    batch_size = images.size(0)
     # vis data
-    mean=(0.406, 0.456, 0.485)
-    std=(0.225, 0.224, 0.229)
-    mean = np.array(mean, dtype=np.float32)
-    std = np.array(std, dtype=np.float32)
+    rgb_mean=np.array((0.485, 0.456, 0.406), dtype=np.float32)
+    rgb_std=np.array((0.229, 0.224, 0.225), dtype=np.float32)
 
-    img = images[0].permute(1, 2, 0).cpu().numpy()[:, :, ::-1]
-    img = ((img * std + mean)*255).astype(np.uint8)
-    img = img.copy()
+    for bi in range(batch_size):
+        # to numpy
+        image = images[bi].permute(1, 2, 0).cpu().numpy()
+        # denormalize
+        image = ((image * rgb_std + rgb_mean)*255).astype(np.uint8)
+        # to BGR
+        image = image[..., (2, 1, 0)]
+        image = image.copy()
+        img_h, img_w = image.shape[:2]
 
-    for box in targets[0]:
-        xmin, ymin, xmax, ymax = box[:-1]
-        # print(xmin, ymin, xmax, ymax)
-        xmin *= img_size
-        ymin *= img_size
-        xmax *= img_size
-        ymax *= img_size
-        cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 2)
+        boxes = targets[bi]["boxes"]
+        labels = targets[bi]["labels"]
+        for box, label in zip(boxes, labels):
+            x1, y1, x2, y2 = box
+            cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
 
-    cv2.imshow('img', img)
-    cv2.waitKey(0)
+        cv2.imshow('groundtruth', image)
+        cv2.waitKey(0)
+
+        # to numpy
+        mask = masks[bi].cpu().numpy()
+        mask = (mask * 255).astype(np.uint8).copy()
+
+        boxes = targets[bi]["boxes"]
+        labels = targets[bi]["labels"]
+        for box, label in zip(boxes, labels):
+            x1, y1, x2, y2 = box
+            cv2.rectangle(mask, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
+
+        cv2.imshow('mask', mask)
+        cv2.waitKey(0)
 
 
 if __name__ == '__main__':

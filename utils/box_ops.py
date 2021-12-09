@@ -1,13 +1,13 @@
 import torch
 
-def iou_score(bboxes_a, bboxes_b, batch_size):
+def iou_score(bboxes_a, bboxes_b):
     """
         Input:\n
-        bboxes_a : [B*N, 4] = [x1, y1, x2, y2] \n
-        bboxes_b : [B*N, 4] = [x1, y1, x2, y2] \n
+        bboxes_a : [N, 4] = [x1, y1, x2, y2] \n
+        bboxes_b : [N, 4] = [x1, y1, x2, y2] \n
 
         Output:\n
-        iou : [B, N] = [iou, ...] \n
+        iou : [N,] \n
     """
     tl = torch.max(bboxes_a[:, :2], bboxes_b[:, :2])
     br = torch.min(bboxes_a[:, 2:], bboxes_b[:, 2:])
@@ -18,13 +18,13 @@ def iou_score(bboxes_a, bboxes_b, batch_size):
     area_i = torch.prod(br - tl, 1) * en  # * ((tl < br).all())
     iou = area_i / (area_a + area_b - area_i + 1e-14)
 
-    return iou.view(batch_size, -1)
+    return iou
 
 
-def giou_score(bboxes_a, bboxes_b, batch_size):
+def giou_score(bboxes_a, bboxes_b):
     """
-        bbox_1 : [B*N, 4] = [x1, y1, x2, y2]
-        bbox_2 : [B*N, 4] = [x1, y1, x2, y2]
+        bbox_1 : [N, 4] = [x1, y1, x2, y2]
+        bbox_2 : [N, 4] = [x1, y1, x2, y2]
     """
     # iou
     tl = torch.max(bboxes_a[:, :2], bboxes_b[:, :2])
@@ -44,7 +44,7 @@ def giou_score(bboxes_a, bboxes_b, batch_size):
 
     giou = (iou - (area_c - area_i) / (area_c + 1e-14))
 
-    return giou.view(batch_size, -1)
+    return giou
 
 
 if __name__ == '__main__':

@@ -17,6 +17,7 @@ class YOLOF(nn.Module):
                  post_process=False):
         super(YOLOF, self).__init__()
         self.device = device
+        self.fmp_size = None
         self.num_classes = num_classes
         self.trainable = trainable
         self.conf_thresh = conf_thresh
@@ -26,8 +27,8 @@ class YOLOF(nn.Module):
         self.post_process = post_process
 
         # backbone
-        self.backbone, feature_channels, self.stride = build_backbone(pretrained=trainable,
-                                                                      freeze_bn=trainable,
+        self.backbone, feature_channels, self.stride = build_backbone(pretrained=False,
+                                                                      freeze=trainable,
                                                                       model=cfg['backbone'])
 
         # neck
@@ -60,16 +61,7 @@ class YOLOF(nn.Module):
 
     def _init_head(self):  
         # init weight of decoder
-        for m in self.cls_feat():
-            if isinstance(m, nn.Conv2d):
-                nn.init.normal_(m.weight, mean=0, std=0.01)
-                if hasattr(m, 'bias') and m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-
-            if isinstance(m, (nn.GroupNorm, nn.BatchNorm2d, nn.SyncBatchNorm)):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-        for m in self.reg_feat():
+        for m in [self.cls_feat, self.reg_feat]:
             if isinstance(m, nn.Conv2d):
                 nn.init.normal_(m.weight, mean=0, std=0.01)
                 if hasattr(m, 'bias') and m.bias is not None:
@@ -85,31 +77,29 @@ class YOLOF(nn.Module):
         nn.init.constant_(self.cls_pred.bias, bias_value)
 
 
-    def generate_anchors(self, img_size):
-        """img_size: list -> [H, W] \n
+    def generate_anchors(self, fmp_size):
+        """fmp_size: list -> [H, W] \n
            stride: int -> output stride
         """
-        """img_size: [H, W]"""
-        img_h, img_w = img_size
         # check anchor boxes
-        if self.img_size and self.img_size == img_size:
+        if self.fmp_size is not None and self.fmp_size == fmp_size:
             return self.anchor_boxes
         else:
-            self.img_size = img_size
             # generate grid cells
-            fmp_h, fmp_w = img_h // self.stride, img_w // self.stride
+            fmp_h, fmp_w = fmp_size
             grid_y, grid_x = torch.meshgrid([torch.arange(fmp_h), torch.arange(fmp_w)])
             # [H, W, 2] -> [HW, 2]
-            grid_xy = torch.stack([grid_x, grid_y], dim=-1).float().view(-1, 2)
+            grid_xy = torch.stack([grid_x, grid_y], dim=-1).float().view(-1, 2) + 0.5
             # [HW, 2] -> [1, HW, 1, 2] -> [1, HW, KA, 2] 
             grid_xy = grid_xy[None, :, None, :].repeat(1, 1, self.num_anchors, 1).to(self.device)
             # [KA, 2] -> [1, 1, KA, 2] -> [1, HW, KA, 2]
             anchor_wh = self.anchor_size[None, None, :, :].repeat(1, fmp_h*fmp_w, 1, 1).to(self.device)
 
-            # [1, HW, KA, 4] -> [1, HW x KA, 4]
-            anchor_boxes = torch.cat([grid_xy, anchor_wh], dim=-1).view(1, -1, 4)
+            # [1, HW, KA, 4]
+            anchor_boxes = torch.cat([grid_xy, anchor_wh], dim=-1)
 
             self.anchor_boxes = anchor_boxes
+            self.fmp_size = fmp_size
 
             return anchor_boxes
         
@@ -180,7 +170,7 @@ class YOLOF(nn.Module):
         return bboxes, scores, cls_inds
 
 
-    def forward(self, x):
+    def forward(self, x, mask=None):
         img_h, img_w = x.shape[2:]
         # backbone
         x = self.backbone(x)
@@ -209,7 +199,7 @@ class YOLOF(nn.Module):
         normalized_cls_pred = normalized_cls_pred.view(B, -1, self.num_anchors, self.num_classes)
 
         # decode box
-        anchor_boxes = self.generate_anchors(img_size=[H, W]) # [1, HW, KA, 4]
+        anchor_boxes = self.generate_anchors(fmp_size=[H, W]) # [1, HW, KA, 4]
         # [B, KA*4, H, W] -> [B, KA, 4, H, W] -> [B, H, W, KA, 4] -> [B, HW, KA, 4]
         reg_pred =reg_pred.view(B, -1, 4, H, W).permute(0, 3, 4, 1, 2).contiguous()
         reg_pred = reg_pred.view(B, -1, self.num_anchors, 4)

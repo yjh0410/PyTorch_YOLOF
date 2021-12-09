@@ -8,7 +8,6 @@ try:
     from pycocotools.coco import COCO
 except:
     print("It seems that the COCOAPI is not installed.")
-    exit(0)
 
 
 coco_class_labels = ('background',

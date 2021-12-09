@@ -34,12 +34,15 @@ class DilatedEncoder(nn.Module):
         self._init_weight()
 
     def _init_weight(self):
-        weight_init.c2_xavier_fill(self.lateral_conv)
-        weight_init.c2_xavier_fill(self.fpn_conv)
-        for m in [self.lateral_norm, self.fpn_norm]:
-            nn.init.constant_(m.weight, 1)
-            nn.init.constant_(m.bias, 0)
-        for m in self.dilated_encoder_blocks.modules():
+        for m in self.projector:
+            if isinstance(m, nn.Conv2d):
+                weight_init.c2_xavier_fill(m)
+                weight_init.c2_xavier_fill(m)
+            if isinstance(m, (nn.GroupNorm, nn.BatchNorm2d, nn.SyncBatchNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+        for m in self.encoders.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.normal_(m.weight, mean=0, std=0.01)
                 if hasattr(m, 'bias') and m.bias is not None:
