@@ -41,7 +41,7 @@ class FocalWithLogitsLoss(nn.Module):
         return loss
 
 
-class SetCriterion(nn.Module):
+class Criterion(nn.Module):
     def __init__(self, cfg, device, loss_cls_weight=1.0, loss_reg_weight=1.0, num_classes=80):
         super().__init__()
         self.cfg = cfg
@@ -115,11 +115,11 @@ class SetCriterion(nn.Module):
 
 
 def build_criterion(args, cfg, device, num_classes=80):
-    criterion = SetCriterion(cfg=cfg,
-                             device=device,
-                             loss_cls_weight=args.loss_cls_weight,
-                             loss_reg_weight=args.loss_reg_weight,
-                             num_classes=num_classes)
+    criterion = Criterion(cfg=cfg,
+                          device=device,
+                          loss_cls_weight=args.loss_cls_weight,
+                          loss_reg_weight=args.loss_reg_weight,
+                          num_classes=num_classes)
     return criterion
 
     
