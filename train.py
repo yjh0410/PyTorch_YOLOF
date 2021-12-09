@@ -128,7 +128,7 @@ def train():
     dataloader = build_dataloader(args, dataset, detection_collate)
 
     # criterion
-    criterion = build_criterion(args=args, cfg=cfg, num_classes=num_classes)
+    criterion = build_criterion(args=args, device=device, cfg=cfg, num_classes=num_classes)
     
     print('Training model on:', args.dataset)
     print('The dataset size:', len(dataset))
