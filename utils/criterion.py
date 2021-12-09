@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from .box_ops import giou_score
 from .create_labels import label_creator
 
-
+import time
 class FocalWithLogitsLoss(nn.Module):
     def __init__(self, reduction='mean', gamma=2.0, alpha=0.25):
         super(FocalWithLogitsLoss, self).__init__()
@@ -109,12 +109,17 @@ class SetCriterion(nn.Module):
             target: (tensor) [B, HW, KA, C+4+1]
         """
         # make labels
+        torch.cuda.synchronize()
+        t0 = time.time()
         targets = label_creator(targets=targets, 
                                 anchor_boxes=anchor_boxes, 
                                 num_classes=self.num_classes,
                                 topk=self.cfg['topk'],
                                 igt=self.cfg['ignore_thresh'])
         targets = targets.to(self.device)
+        torch.cuda.synchronize()
+        t1 = time.time()
+        print(t1 - t0)
 
         batch_size = outputs["pred_cls"].size(0)
         # compute class loss
