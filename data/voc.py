@@ -189,10 +189,11 @@ if __name__ == "__main__":
     rgb_mean = np.array((0.485, 0.456, 0.406), dtype=np.float32)
     rgb_std = np.array((0.229, 0.224, 0.225), dtype=np.float32)
 
-    img_size = 512
+    img_size = 320
+    max_size = int(round(1333 / 800 * img_size))
     dataset = VOCDetection(
                 data_dir='d:/datasets/VOCdevkit/',
-                transform=TrainTransforms(size=img_size, random_size=True))
+                transform=TrainTransforms(size=img_size, max_size=max_size, random_size=True))
     
     np.random.seed(0)
     class_colors = [(np.random.randint(255),

@@ -129,16 +129,16 @@ class PadImage(object):
 
 # TrainTransform
 class TrainTransforms(object):
-    def __init__(self, size=800, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), random_size=False):
+    def __init__(self, size=800, max_size=1333, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), random_size=False):
         self.size = size
         self.mean = mean
         self.std = std
         self.transforms = Compose([
             ToTensor(),
             RandomHorizontalFlip(),
-            Resize(size, random_size=random_size),
+            Resize(size, max_size=max_size, random_size=random_size),
             Normalize(mean, std),
-            PadImage(max_size=1333)
+            PadImage(max_size=max_size)
         ])
 
     def __call__(self, image, target, mask=None):
