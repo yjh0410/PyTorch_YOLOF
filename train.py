@@ -321,9 +321,10 @@ def build_dataset(args, device):
     if args.dataset == 'voc':
         data_dir = os.path.join(args.root, 'VOCdevkit')
         num_classes = 20
+        max_size = int(round(1333 / 800 * args.img_size))
         dataset = VOCDetection(
                         data_dir=data_dir,
-                        transform=TrainTransforms(args.img_size))
+                        transform=TrainTransforms(args.img_size, max_size=max_size))
 
         evaluator = VOCAPIEvaluator(
                         data_dir=data_dir,
@@ -333,10 +334,11 @@ def build_dataset(args, device):
     elif args.dataset == 'coco':
         data_dir = os.path.join(args.root, 'COCO')
         num_classes = 80
+        max_size = int(round(1333 / 800 * args.img_size))
         dataset = COCODataset(
                     data_dir=data_dir,
                     image_set='train2017',
-                    transform=TrainTransforms(args.img_size))
+                    transform=TrainTransforms(args.img_size, max_size=max_size))
 
         evaluator = COCOAPIEvaluator(
                         data_dir=data_dir,
