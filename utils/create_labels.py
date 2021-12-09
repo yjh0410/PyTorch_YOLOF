@@ -83,7 +83,7 @@ def label_creator(targets,
                 iou_score = iou_sorted[k]
                 if iou_score > igt:
                     grid_idx = iou_sorted_idx[k]
-                    target_tensor[bi, grid_idx, :num_classes] = 0.0
+                    target_tensor[bi, grid_idx, :num_classes] = 0.0 # avoiding the multi labels for one grid cell
                     target_tensor[bi, grid_idx, cls_id] = 1.0
                     target_tensor[bi, grid_idx, num_classes:num_classes+4] = np.array([x1, y1, x2, y2])
                     target_tensor[bi, grid_idx, -1] = 1.0
