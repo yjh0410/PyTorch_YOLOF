@@ -105,6 +105,12 @@ class COCODataset(Dataset):
             else:
                 print('No bbox !!!')
 
+        # check the annotation
+        if len(anno) == 0:
+            anno = np.zeros([1, 5])
+        else:
+            anno = np.array(anno)
+        
         # target
         target = {
             "boxes": anno[:, :4],
