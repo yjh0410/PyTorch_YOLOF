@@ -192,7 +192,7 @@ if __name__ == "__main__":
     img_size = 512
     dataset = VOCDetection(
                 data_dir='d:/datasets/VOCdevkit/',
-                transform=TrainTransforms(img_size))
+                transform=TrainTransforms(size=img_size, random_size=True))
     
     np.random.seed(0)
     class_colors = [(np.random.randint(255),
@@ -226,3 +226,17 @@ if __name__ == "__main__":
         cv2.imshow('gt', image)
         # cv2.imwrite(str(i)+'.jpg', img)
         cv2.waitKey(0)
+
+        if mask is not None:
+            # to numpy
+            mask = mask.cpu().numpy()
+            mask = (mask * 255).astype(np.uint8).copy()
+
+            boxes = target["boxes"]
+            labels = target["labels"]
+            for box, label in zip(boxes, labels):
+                x1, y1, x2, y2 = box
+                cv2.rectangle(mask, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
+
+            cv2.imshow('mask', mask)
+            cv2.waitKey(0)

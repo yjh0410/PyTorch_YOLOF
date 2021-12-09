@@ -79,7 +79,9 @@ def parse_args():
     parser.add_argument('--wp_epoch', type=int, default=1,
                         help='The upper bound of warm-up')
     parser.add_argument('-ms', '--multi_scale', action='store_true', default=False,
-                        help='use multi-scale trick')      
+                        help='use multi-scale trick')
+    parser.add_argument('--accumulate', type=int, default=1,
+                        help='accumulate gradient')
 
     # DDP train
     parser.add_argument('-dist', '--distributed', action='store_true', default=False,
@@ -226,6 +228,7 @@ def train():
             cls_loss, reg_loss, total_loss = criterion(anchor_boxes=net.anchor_boxes,
                                                        outputs=outputs,
                                                        targets=targets)
+            total_loss = total_loss / args.accumulate
 
             loss_dict = dict(
                 cls_loss=cls_loss,
@@ -239,9 +242,10 @@ def train():
                 continue
 
             # Backward and Optimize
-            total_loss.backward()        
-            optimizer.step()
-            optimizer.zero_grad()
+            if ni % args.accumulate == 0:
+                total_loss.backward()        
+                optimizer.step()
+                optimizer.zero_grad()
 
             # display
             if iter_i % 10 == 0:
