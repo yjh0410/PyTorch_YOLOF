@@ -58,31 +58,13 @@ def detection_collate(batch):
     targets = []
     images = []
     masks = []
-    max_width = 0
-    max_height = 0
-    # obtain the max height and max width
-    for sample in batch:
-        h, w = sample[0].shape[-2:]
-        max_width = max(max_width, w)
-        max_height = max(max_height, h)
 
     for sample in batch:
         image = sample[0]
         target = sample[1]
-        # zero padding
-        c, h, w = image.shape[:3]
-        image_with_padding = torch.zeros([c, max_height, max_width])
-        image_with_padding[:, :h, :w] = image
-        # image mask
-        mask = torch.zeros([max_height, max_width])
-        mask[:h, :w] = 1.0
-        # rescale bbox
-        boxes_ = target["boxes"].clone()
-        boxes_[:, [0, 2]] = boxes_[:, [0, 2]] * w
-        boxes_[:, [1, 3]] = boxes_[:, [1, 3]] * h
-        target["boxes"] = boxes_
+        mask = sample[2]
 
-        images.append(image_with_padding)
+        images.append(image)
         targets.append(target)
         masks.append(mask)
 

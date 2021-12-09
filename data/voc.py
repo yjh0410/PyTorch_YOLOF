@@ -107,8 +107,8 @@ class VOCDetection(data.Dataset):
 
 
     def __getitem__(self, index):
-        image, target = self.pull_item(index)
-        return image, target
+        image, target, mask= self.pull_item(index)
+        return image, target, mask
 
 
     def __len__(self):
@@ -145,9 +145,9 @@ class VOCDetection(data.Dataset):
         img_id = self.ids[index]
         image, target = self.load_image_target(img_id)
         # augment
-        image, target = self.transform(image, target)
+        image, target, mask = self.transform(image, target)
             
-        return image, target
+        return image, target, mask
 
 
     def pull_image(self, index):
@@ -201,7 +201,7 @@ if __name__ == "__main__":
     print('Data length: ', len(dataset))
 
     for i in range(1000):
-        image, target = dataset.pull_item(i)
+        image, target, mask= dataset.pull_item(i)
         # to numpy
         image = image.permute(1, 2, 0).numpy()
         # denormalize
@@ -220,10 +220,6 @@ if __name__ == "__main__":
             color = class_colors[cls_id]
             # class name
             label = VOC_CLASSES[cls_id]
-            x1 *= img_w
-            y1 *= img_h
-            x2 *= img_w
-            y2 *= img_h
             image = cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), (0,0,255), 2)
             # put the test on the bbox
             cv2.putText(image, label, (int(x1), int(y1 - 5)), 0, 0.5, color, 1, lineType=cv2.LINE_AA)
