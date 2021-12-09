@@ -230,7 +230,12 @@ class YOLOF(nn.Module):
             return bboxes, scores, cls_inds
 
         else:
-            return normalized_cls_pred, box_pred  
+            if mask is not None:
+                mask = torch.nn.functional.interpolate(mask, size=[H, W])
+            outputs = {"pred_cls": normalized_cls_pred,
+                        "pred_box": box_pred,
+                        "mask": mask}
+            return outputs 
 
 
 def build_model(args, cfg, device, num_classes=80, trainable=False, anchor_size=None, post_process=False):

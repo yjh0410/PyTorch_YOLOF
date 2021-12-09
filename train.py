@@ -219,14 +219,12 @@ def train():
             images = images.to(device)
 
             # inference
-            cls_scores, bboxes = model(images)
+            outputs = model(images)
 
             # compute loss
             cls_loss, reg_loss, total_loss = criterion(anchor_boxes=net.anchor_boxes,
-                                                       pred_cls=cls_scores, 
-                                                       pred_box=bboxes, 
-                                                       targets=targets,
-                                                       masks=None)
+                                                       outputs=outputs,
+                                                       targets=targets)
 
             loss_dict = dict(
                 cls_loss=cls_loss,

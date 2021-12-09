@@ -52,7 +52,7 @@ def label_creator(targets,
     # prepare
     batch_size = len(targets)
     num_queries = anchor_boxes.shape[1]
-    anchor_boxes = anchor_boxes.numpy().copy()
+    anchor_boxes = anchor_boxes.cpu().numpy().copy()
     KA = anchor_boxes.shape[-2]
 
     # [B, HW x KA, cls+box+pos]

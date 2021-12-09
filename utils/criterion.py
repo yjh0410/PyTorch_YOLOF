@@ -96,12 +96,11 @@ class SetCriterion(nn.Module):
         return loss_reg
 
 
-    def forward(self, anchor_boxes, pred_cls, pred_box, targets, masks=None):
+    def forward(self, anchor_boxes, outputs, targets):
         """
             pred_cls: (tensor) [B, HW, KA, C]
             pred_giou: (tensor) [B, HW, KA, 1]
             target: (tensor) [B, HW, KA, C+4+1]
-            masks: (tensor) [B, HW,]
         """
         # make labels
         targets = label_creator(targets=targets, 
@@ -110,11 +109,11 @@ class SetCriterion(nn.Module):
                                 topk=self.cfg['topk'],
                                 igt=self.cfg['ignore_thresh'])
 
-        batch_size = pred_cls.size(0)
+        batch_size = outputs["pred_cls"].size(0)
         # compute class loss
-        loss_labels = self.loss_labels(pred_cls, targets, masks)
+        loss_labels = self.loss_labels(outputs["pred_cls"], targets, outputs["mask"])
         # compute bboxes loss
-        loss_bboxes = self.loss_bboxes(pred_box, targets, masks)
+        loss_bboxes = self.loss_bboxes(outputs["pred_box"], targets, outputs["mask"])
 
         # total loss
         losses = self.loss_cls_weight * loss_labels + self.loss_reg_weight * loss_bboxes
