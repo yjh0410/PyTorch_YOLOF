@@ -28,15 +28,17 @@ class FocalWithLogitsLoss(nn.Module):
         if self.reduction == "mean":
             pos_inds = (targets == 1.0).float()
             # [B, HW, KA, C] -> [B,]
-            num_pos = pos_inds.sum([1, 2, 3]).clamp(1)
+            num_pos = pos_inds.sum([1, 2, 3]).clamp(1.0)
 
             if mask is None:
                 # [B, HW, KA, C] -> [B,]
                 loss = loss.sum([1, 2, 3]) / num_pos
+                loss = loss.sum()
             else:
                 # [B, HW,] -> [B, HW, 1, 1]
                 mask = mask[..., None, None]
                 loss = (loss * mask).sum([1, 2, 3]) / num_pos
+                loss = loss.sum()
 
         elif self.reduction == "sum":
             if mask is None:
@@ -73,7 +75,7 @@ class SetCriterion(nn.Module):
         # groundtruth    
         target_bboxes = target[..., self.num_classes:self.num_classes+4] # [B, HW, KA, 4]
         target_pos = target[..., -1].float()                             # [B, HW, KA,]
-        num_pos = target_pos.sum([1, 2], keepdim=True).clamp(1)          # [B,]
+        num_pos = target_pos.sum([1, 2]).clamp(1.0)                      # [B,]
 
         # reg loss
         B, HW, KA, _ = pred_box.size()
@@ -87,19 +89,22 @@ class SetCriterion(nn.Module):
         pred_giou = pred_giou.view(B, HW, KA)
         loss_giou = 1. - pred_giou
         if mask is None:
-            loss_reg = ((loss_giou * target_pos).sum([1, 2]) / num_pos).sum()
+            loss_reg = (loss_giou * target_pos).sum([1, 2]) / num_pos
+            loss_reg = loss_reg.sum()
         else:
             # [B, HW,] -> [B, HW, 1]
             mask = mask[..., None]
-            loss_reg = ((loss_giou * target_pos * mask).sum([1, 2]) / num_pos).sum()
+            loss_reg = (loss_giou * mask * target_pos).sum([1, 2]) / num_pos
+            loss_reg = loss_reg.sum()
         
         return loss_reg
 
 
     def forward(self, anchor_boxes, outputs, targets):
         """
-            pred_cls: (tensor) [B, HW, KA, C]
-            pred_giou: (tensor) [B, HW, KA, 1]
+            outputs["pred_cls"]: (tensor) [B, HW, KA, C]
+            outputs["pred_giou"]: (tensor) [B, HW, KA, 1]
+            outputs["mask"]: (tensor) [B, HW]
             target: (tensor) [B, HW, KA, C+4+1]
         """
         # make labels
@@ -112,12 +117,13 @@ class SetCriterion(nn.Module):
         batch_size = outputs["pred_cls"].size(0)
         # compute class loss
         loss_labels = self.loss_labels(outputs["pred_cls"], targets, outputs["mask"])
+        loss_labels /= batch_size
         # compute bboxes loss
         loss_bboxes = self.loss_bboxes(outputs["pred_box"], targets, outputs["mask"])
+        loss_bboxes /= batch_size
 
         # total loss
         losses = self.loss_cls_weight * loss_labels + self.loss_reg_weight * loss_bboxes
-        losses /= batch_size
 
         return loss_labels, loss_bboxes, losses
 

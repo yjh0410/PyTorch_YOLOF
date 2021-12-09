@@ -231,7 +231,11 @@ class YOLOF(nn.Module):
 
         else:
             if mask is not None:
-                mask = torch.nn.functional.interpolate(mask, size=[H, W])
+                # [B, H, W]
+                mask = torch.nn.functional.interpolate(mask[None], size=[H, W]).bool()[0]
+                # [B, HW]
+                mask = mask.flatten(1)
+
             outputs = {"pred_cls": normalized_cls_pred,
                         "pred_box": box_pred,
                         "mask": mask}
