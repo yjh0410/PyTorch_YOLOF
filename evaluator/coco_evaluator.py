@@ -15,7 +15,7 @@ class COCOAPIEvaluator():
     All the data in the val2017 dataset are processed \
     and evaluated by COCO API.
     """
-    def __init__(self, data_dir, img_size, device, testset=False, transform=None):
+    def __init__(self, data_dir, device, testset=False, transform=None):
         """
         Args:
             data_dir (str): dataset root directory
