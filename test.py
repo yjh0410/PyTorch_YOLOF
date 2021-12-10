@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 
-from config import yolof_config
+from config.yolof_config import yolof_config
 from data.voc import VOC_CLASSES, VOCDetection
 from data.coco import coco_class_index, coco_class_labels, COCODataset
 from data.transforms import ValTransforms
