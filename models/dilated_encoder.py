@@ -3,6 +3,7 @@ import torch.nn as nn
 from .conv import Conv
 from utils import weight_init
 
+
 # Dilated Encoder
 class Bottleneck(nn.Module):
     def __init__(self, c, d=1, e=0.5, act=True):

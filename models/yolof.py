@@ -220,7 +220,7 @@ class YOLOF(nn.Module):
                 # B = 1
                 scores = normalized_cls_pred.sigmoid()
 
-                # resclae bbox
+                # rescale bbox
                 box_pred = box_pred * self.stride
 
                 # normalize bbox
@@ -241,8 +241,8 @@ class YOLOF(nn.Module):
             if mask is not None:
                 # [B, H, W]
                 mask = torch.nn.functional.interpolate(mask[None], size=[H, W]).bool()[0]
-                # [B, H, W]
-                # mask = mask.flatten(1)
+                # [B, HW]
+                mask = mask.flatten(1)
 
             outputs = {"pred_cls": normalized_cls_pred,
                         "pred_box": box_pred,

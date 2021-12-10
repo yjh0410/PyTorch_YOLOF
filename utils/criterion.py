@@ -21,7 +21,7 @@ class FocalWithLogitsLoss(nn.Module):
                                                      )
         p_t = p * targets + (1.0 - p) * (1.0 - targets)
         loss = ce_loss * ((1.0 - p_t) ** self.gamma)
-        loss = loss if mask is None else loss * mask.flatten(1)[..., None, None]
+        loss = loss if mask is None else loss * mask[..., None, None]
 
         if self.alpha >= 0:
             alpha_t = self.alpha * targets + (1.0 - self.alpha) * (1.0 - targets)
@@ -78,7 +78,7 @@ class Criterion(nn.Module):
         pred_giou = giou_score(x1y1x2y2_pred, x1y1x2y2_gt)
         # [B x HW x KA,] -> [B, HW, KA,]
         pred_giou = pred_giou.view(B, HW, KA)
-        loss_reg = 1. - pred_giou if mask is None else (1. - pred_giou) * mask.flatten(1)[..., None]
+        loss_reg = 1. - pred_giou if mask is None else (1. - pred_giou) * mask[..., None]
 
         loss_reg = (loss_reg * target_pos).sum([1, 2]) / num_pos
         loss_reg = loss_reg.sum()
@@ -92,7 +92,7 @@ class Criterion(nn.Module):
             anchor_boxes: (tensor) [1, HW, KA, 4]
             outputs["pred_cls"]: (tensor) [B, HW, KA, C]
             outputs["pred_giou"]: (tensor) [B, HW, KA, 1]
-            outputs["mask"]: (tensor) [B, H, W]
+            outputs["mask"]: (tensor) [B, HW]
             target: (tensor) [B, HW, KA, C+4+1]
         """
         batch_size = outputs["pred_cls"].size(0)
