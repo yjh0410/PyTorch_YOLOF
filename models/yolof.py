@@ -212,25 +212,26 @@ class YOLOF(nn.Module):
         box_pred = torch.cat([x1y1_pred, x2y2_pred], dim=-1)
 
         if self.post_process:
-            # B = 1
-            scores = normalized_cls_pred.sigmoid()[0]
+            with torch.no_grad():
+                # B = 1
+                scores = normalized_cls_pred.sigmoid()[0]
 
-            # resclae bbox
-            box_pred = box_pred * self.stride
+                # resclae bbox
+                box_pred = box_pred * self.stride
 
-            # normalize bbox
-            box_pred[..., [0, 2]] /= img_w
-            box_pred[..., [1, 3]] /= img_h
-            box_pred = box_pred.clamp(0., 1.)
+                # normalize bbox
+                box_pred[..., [0, 2]] /= img_w
+                box_pred[..., [1, 3]] /= img_h
+                box_pred = box_pred.clamp(0., 1.)
 
-            # to cpu
-            scores = scores.cpu().numpy()
-            bboxes = box_pred.cpu().numpy()
+                # to cpu
+                scores = scores.cpu().numpy()
+                bboxes = box_pred.cpu().numpy()
 
-            # post-process
-            bboxes, scores, cls_inds = self.postprocess(bboxes, scores)
+                # post-process
+                bboxes, scores, cls_inds = self.postprocess(bboxes, scores)
 
-            return bboxes, scores, cls_inds
+                return bboxes, scores, cls_inds
 
         else:
             if mask is not None:
@@ -241,7 +242,7 @@ class YOLOF(nn.Module):
 
             outputs = {"pred_cls": normalized_cls_pred,
                         "pred_box": box_pred,
-                        "mask": mask,
+                        "mask": None,
                         "fmp_size": [H, W]}
             return outputs 
 

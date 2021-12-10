@@ -11,21 +11,25 @@ def compute_iou(anchor_boxes, target_box):
         iou : [N, 4], where N = HW x KA
     """
     # anchor box: [HW x KA, 4]
-    anchor_width = anchor_boxes[:, 2] - anchor_boxes[:, 0]
-    anchor_height = anchor_boxes[:, 3] - anchor_boxes[:, 1]
+    # convert  [xc, yc, w, h] -> [x1, y1, x2, y2]
+    anchor_boxes_ = anchor_boxes.copy()
+    anchor_boxes_[..., :2] = anchor_boxes[..., :2] - anchor_boxes[..., 2:] * 0.5 # x1y1
+    anchor_boxes_[..., 2:] = anchor_boxes[..., :2] + anchor_boxes[..., 2:] * 0.5 # x2y2
+    anchor_width = anchor_boxes_[:, 2] - anchor_boxes_[:, 0]
+    anchor_height = anchor_boxes_[:, 3] - anchor_boxes_[:, 1]
     anchor_area = anchor_height * anchor_width
     
     # gt_box: [1, 4] -> [N, 4]
-    target_box = np.repeat(target_box, anchor_boxes.shape[0], axis=0)
+    target_box = np.repeat(target_box, anchor_boxes_.shape[0], axis=0)
     target_width = target_box[:, 2] - target_box[:, 0]
     target_height = target_box[:, 3] - target_box[:, 1]
     target_area = target_height * target_width
 
     # Area of intersection
-    intersecion_width = np.minimum(anchor_boxes[:, 2], target_box[:, 2]) - \
-                            np.maximum(anchor_boxes[:, 0], target_box[:, 0])
-    intersection_height = np.minimum(anchor_boxes[:, 3], target_box[:, 3]) - \
-                            np.maximum(anchor_boxes[:, 1], target_box[:, 1])
+    intersecion_width = np.minimum(anchor_boxes_[:, 2], target_box[:, 2]) - \
+                            np.maximum(anchor_boxes_[:, 0], target_box[:, 0])
+    intersection_height = np.minimum(anchor_boxes_[:, 3], target_box[:, 3]) - \
+                            np.maximum(anchor_boxes_[:, 1], target_box[:, 1])
     intersection_area = intersection_height.clip(0.) * intersecion_width.clip(0.)
     # Area of union
     union_area = anchor_area + target_area - intersection_area + 1e-20
@@ -36,10 +40,9 @@ def compute_iou(anchor_boxes, target_box):
 
 
 def label_creator(targets,
-                  img_size,
-                  fmp_size,
                   anchor_boxes, 
                   num_classes, 
+                  stride=32,
                   topk=8,
                   igt=0.15):
     """
@@ -51,17 +54,13 @@ def label_creator(targets,
     """
     # prepare
     batch_size = len(targets)
-    num_queries = anchor_boxes.shape[1]
-    anchor_boxes = anchor_boxes.cpu().numpy().copy()
-    KA = anchor_boxes.shape[-2]
-    # size
-    img_h, img_w = img_size
-    fmp_h, fmp_w = fmp_size 
+    N, KA = anchor_boxes.shape[1:3]
+    anchor_boxes = anchor_boxes
 
     # [B, HW x KA, cls+box+pos]
-    target_tensor = np.zeros([batch_size, num_queries*KA, num_classes + 4 + 1])
+    target_tensor = np.zeros([batch_size, N*KA, num_classes + 4 + 1])
     # [1, HW, KA, 4] -> [HW x KA, 4]
-    anchor_boxes = anchor_boxes[0].reshape(-1, 4)
+    anchor_boxes = anchor_boxes.cpu().numpy().copy()[0].reshape(-1, 4)
 
     # generate gt datas  
     for bi in range(batch_size):
@@ -74,10 +73,10 @@ def label_creator(targets,
             x1, y1, x2, y2 = box
             # TODO:
             # scale bboxes coords
-            x1s = x1 / img_w * fmp_w
-            y1s = y1 / img_h * fmp_h
-            x2s = x2 / img_w * fmp_w
-            y2s = y2 / img_h * fmp_h
+            x1s = x1 / stride
+            y1s = y1 / stride
+            x2s = x2 / stride
+            y2s = y2 / stride
 
             gt_box = np.array([[x1s, y1s, x2s, y2s]])
 
@@ -91,15 +90,15 @@ def label_creator(targets,
             # make labels
             for k in range(topk):
                 iou_score = iou_sorted[k]
+                grid_idx = iou_sorted_idx[k]
                 if iou_score > igt:
-                    grid_idx = iou_sorted_idx[k]
                     target_tensor[bi, grid_idx, :num_classes] = 0.0 # avoiding the multi labels for one grid cell
                     target_tensor[bi, grid_idx, cls_id] = 1.0
                     target_tensor[bi, grid_idx, num_classes:num_classes+4] = np.array([x1s, y1s, x2s, y2s])
                     target_tensor[bi, grid_idx, -1] = 1.0
 
     # [B, HW, KA, cls+box+pos]
-    target_tensor = target_tensor.reshape(batch_size, num_queries, KA,  num_classes + 4 + 1)
+    target_tensor = target_tensor.reshape(batch_size, N, KA,  num_classes + 4 + 1)
     
     return torch.from_numpy(target_tensor).float()
 

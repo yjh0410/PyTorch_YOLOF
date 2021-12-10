@@ -3,8 +3,6 @@ from __future__ import division
 import os
 import argparse
 import time
-import random
-import cv2
 import numpy as np
 
 import torch
@@ -19,10 +17,10 @@ from config.yolof_config import yolof_config
 from data.transforms import TrainTransforms, ValTransforms
 
 from utils import distributed_utils
-from utils import create_labels
 from utils.criterion import build_criterion
 from utils.com_flops_params import FLOPs_and_Params
 from utils.misc import detection_collate
+from utils.vis import vis_data
 
 from evaluator.coco_evaluator import COCOAPIEvaluator
 from evaluator.voc_evaluator import VOCAPIEvaluator
@@ -51,9 +49,14 @@ def parse_args():
                         help='use tensorboard')
     parser.add_argument('--save_folder', default='weights/', type=str, 
                         help='Gamma update for SGD')
-    parser.add_argument('--vis', action='store_true', default=False,
-                        help='visualize targets.')
 
+    # visualize
+    parser.add_argument('--vis_data', action='store_true', default=False,
+                        help='visualize input data.')
+    parser.add_argument('--vis_targets', action='store_true', default=False,
+                        help='visualize the targets.')
+    parser.add_argument('--vis_anchors', action='store_true', default=False,
+                        help='visualize anchor boxes.')
     # model
     parser.add_argument('-v', '--version', default='yolof_r50_C5_1x',
                         help='yolof_r50_C5_1x, yolof_r101_C5_1x')
@@ -213,10 +216,9 @@ def train():
                 tmp_lr = base_lr
                 set_lr(optimizer, tmp_lr)
 
-            # visualize target
-            if args.vis:
+            # visualize input data
+            if args.vis_data:
                 vis_data(images, targets, masks)
-                continue
 
             # to device
             images = images.to(device)
@@ -226,10 +228,13 @@ def train():
             outputs = model(images, mask=masks)
 
             # compute loss
-            cls_loss, reg_loss, total_loss = criterion(img_size=images.shape[2:],
-                                                       anchor_boxes=net.anchor_boxes,
+            cls_loss, reg_loss, total_loss = criterion(anchor_boxes=net.anchor_boxes,
                                                        outputs=outputs,
-                                                       targets=targets)
+                                                       targets=targets,
+                                                       stride=net.stride,
+                                                       images=images,
+                                                       vis_labels=args.vis_targets)
+            
             total_loss = total_loss / args.accumulate
 
             loss_dict = dict(
@@ -372,7 +377,7 @@ def build_dataloader(args, dataset, collate_fn=None):
         # dataloader
         dataloader = torch.utils.data.DataLoader(
                         dataset=dataset, 
-                        shuffle=True,
+                        shuffle=False,
                         batch_size=args.batch_size, 
                         collate_fn=collate_fn,
                         num_workers=args.num_workers,
@@ -384,80 +389,6 @@ def build_dataloader(args, dataset, collate_fn=None):
 def set_lr(optimizer, lr):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
-
-
-def vis_data(images, targets, masks):
-    """
-        images: (tensor) [B, 3, H, W]
-        targets: (list) a list of targets
-        masks: (tensor) [B, H, W]
-    """
-    batch_size = images.size(0)
-    # vis data
-    rgb_mean=np.array((0.485, 0.456, 0.406), dtype=np.float32)
-    rgb_std=np.array((0.229, 0.224, 0.225), dtype=np.float32)
-
-    for bi in range(batch_size):
-        # to numpy
-        image = images[bi].permute(1, 2, 0).cpu().numpy()
-        # denormalize
-        image = ((image * rgb_std + rgb_mean)*255).astype(np.uint8)
-        # to BGR
-        image = image[..., (2, 1, 0)]
-        image = image.copy()
-        img_h, img_w = image.shape[:2]
-
-        boxes = targets[bi]["boxes"]
-        labels = targets[bi]["labels"]
-        for box, label in zip(boxes, labels):
-            x1, y1, x2, y2 = box
-            cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
-
-        cv2.imshow('groundtruth', image)
-        cv2.waitKey(0)
-
-        # to numpy
-        mask = masks[bi].cpu().numpy()
-        mask = (mask * 255).astype(np.uint8).copy()
-
-        boxes = targets[bi]["boxes"]
-        labels = targets[bi]["labels"]
-        for box, label in zip(boxes, labels):
-            x1, y1, x2, y2 = box
-            cv2.rectangle(mask, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
-
-        cv2.imshow('mask', mask)
-        cv2.waitKey(0)
-
-
-def vis_targets(images, targets):
-    """
-        images: (tensor) [B, 3, H, W]
-        targets: (tensor) [B, N, KA, C+4+1]
-    """
-    batch_size = images.size(0)
-    # vis data
-    rgb_mean=np.array((0.485, 0.456, 0.406), dtype=np.float32)
-    rgb_std=np.array((0.229, 0.224, 0.225), dtype=np.float32)
-
-    for bi in range(batch_size):
-        # to numpy
-        image = images[bi].permute(1, 2, 0).cpu().numpy()
-        # denormalize
-        image = ((image * rgb_std + rgb_mean)*255).astype(np.uint8)
-        # to BGR
-        image = image[..., (2, 1, 0)]
-        image = image.copy()
-        img_h, img_w = image.shape[:2]
-
-        boxes = targets[bi]["boxes"]
-        labels = targets[bi]["labels"]
-        for box, label in zip(boxes, labels):
-            x1, y1, x2, y2 = box
-            cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
-
-        cv2.imshow('groundtruth', image)
-        cv2.waitKey(0)
 
 
 if __name__ == '__main__':

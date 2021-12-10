@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from .box_ops import giou_score
 from .create_labels import label_creator
+from utils.vis import vis_anchor_boxes, vis_targets
 
 
 class FocalWithLogitsLoss(nn.Module):
@@ -85,7 +86,7 @@ class Criterion(nn.Module):
         return loss_reg
 
 
-    def forward(self, img_size, anchor_boxes, outputs, targets):
+    def forward(self, anchor_boxes, outputs, targets, stride=32, images=None, vis_labels=False):
         """
             img_size: (list) [H, W] of the input image.
             anchor_boxes: (tensor) [1, HW, KA, 4]
@@ -95,16 +96,19 @@ class Criterion(nn.Module):
             target: (tensor) [B, HW, KA, C+4+1]
         """
         batch_size = outputs["pred_cls"].size(0)
-        fmp_size = outputs["fmp_size"]
         # make labels
         targets = label_creator(targets=targets, 
-                                img_size=img_size,
-                                fmp_size=fmp_size,
+                                stride=stride,
                                 anchor_boxes=anchor_boxes, 
                                 num_classes=self.num_classes,
                                 topk=self.cfg['topk'],
                                 igt=self.cfg['ignore_thresh'])
         targets = targets.to(self.device)
+
+        # vis labels
+        if vis_labels:
+            vis_targets(images, targets, anchor_boxes, stride=32)
+
 
         # compute class loss
         loss_labels = self.loss_labels(outputs["pred_cls"], targets, outputs["mask"])
