@@ -46,11 +46,10 @@ def label_creator(targets,
                   topk=8,
                   igt=0.15):
     """
-        img_size: (list) [H, W] of the input image.
-        fmp_size: (list) [H, W] of the feature map.
         targets: (list of tensors) annotations
         anchor_boxes: (tensor) [1, HW, KA, 4]
-        num_classes: (int) the number of class 
+        num_classes: (int) the number of class
+        stride: (int) output stride of network
     """
     # prepare
     batch_size = len(targets)
@@ -90,8 +89,8 @@ def label_creator(targets,
             # make labels
             for k in range(topk):
                 iou_score = iou_sorted[k]
-                grid_idx = iou_sorted_idx[k]
                 if iou_score > igt:
+                    grid_idx = iou_sorted_idx[k]
                     target_tensor[bi, grid_idx, :num_classes] = 0.0 # avoiding the multi labels for one grid cell
                     target_tensor[bi, grid_idx, cls_id] = 1.0
                     target_tensor[bi, grid_idx, num_classes:num_classes+4] = np.array([x1s, y1s, x2s, y2s])

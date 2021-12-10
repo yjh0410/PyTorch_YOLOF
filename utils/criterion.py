@@ -53,6 +53,7 @@ class Criterion(nn.Module):
 
         self.cls_loss_f = FocalWithLogitsLoss(reduction='mean')
 
+
     def loss_labels(self, pred_cls, target, mask=None):
         # groundtruth    
         target_labels = target[..., :self.num_classes].float() # [B, HW, KA, C]
@@ -61,6 +62,7 @@ class Criterion(nn.Module):
         loss_cls = self.cls_loss_f(pred_cls, target_labels, mask)
 
         return loss_cls
+
 
     def loss_bboxes(self, pred_box, target, mask=None):
         # groundtruth    
@@ -88,12 +90,13 @@ class Criterion(nn.Module):
 
     def forward(self, anchor_boxes, outputs, targets, stride=32, images=None, vis_labels=False):
         """
-            img_size: (list) [H, W] of the input image.
             anchor_boxes: (tensor) [1, HW, KA, 4]
             outputs["pred_cls"]: (tensor) [B, HW, KA, C]
             outputs["pred_giou"]: (tensor) [B, HW, KA, 1]
             outputs["mask"]: (tensor) [B, HW]
-            target: (tensor) [B, HW, KA, C+4+1]
+            target: (list) a list of annotations
+            images: (tensor) [B, 3, H, W]
+            vis_labels: (bool) visualize labels to check positive samples
         """
         batch_size = outputs["pred_cls"].size(0)
         # make labels
@@ -103,16 +106,17 @@ class Criterion(nn.Module):
                                 num_classes=self.num_classes,
                                 topk=self.cfg['topk'],
                                 igt=self.cfg['ignore_thresh'])
+        # [B, HW, KA, C+4+1]
         targets = targets.to(self.device)
 
         # vis labels
         if vis_labels:
             vis_targets(images, targets, anchor_boxes, stride=32)
 
-
         # compute class loss
         loss_labels = self.loss_labels(outputs["pred_cls"], targets, outputs["mask"])
         loss_labels /= batch_size
+
         # compute bboxes loss
         loss_bboxes = self.loss_bboxes(outputs["pred_box"], targets, outputs["mask"])
         loss_bboxes /= batch_size
