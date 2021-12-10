@@ -5,4 +5,4 @@ python train.py \
         --batch_size 8 \
         --img_size 512 \
         --norm GN \
-        --accumulate 2
+        --accumulate 8
