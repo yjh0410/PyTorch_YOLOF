@@ -57,6 +57,8 @@ def parse_args():
     # model
     parser.add_argument('-v', '--version', default='yolof_r50_C5_1x',
                         help='yolof_r50_C5_1x, yolof_r101_C5_1x')
+    parser.add_argument('--norm', default='BN', type=str,
+                        help='normalization layer')
     parser.add_argument('--conf_thresh', default=0.05, type=float,
                         help='NMS threshold')
     parser.add_argument('--nms_thresh', default=0.6, type=float,
@@ -76,7 +78,7 @@ def parse_args():
     # train trick
     parser.add_argument('--no_warmup', action='store_true', default=False,
                         help='do not use warmup')
-    parser.add_argument('--wp_iter', type=int, default=1500,
+    parser.add_argument('--wp_iter', type=int, default=500,
                         help='The upper bound of warm-up')
     parser.add_argument('-ms', '--multi_scale', action='store_true', default=False,
                         help='use multi-scale trick')
