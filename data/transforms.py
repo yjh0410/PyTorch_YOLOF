@@ -1,5 +1,4 @@
 import random
-from cv2 import imwrite
 import torch
 import torchvision.transforms as T
 import torchvision.transforms.functional as F
@@ -78,7 +77,35 @@ class RandomShift(object):
 
     def __call__(self, image, target=None, mask=None):
         if random.random() < self.p:
-            pass
+            shift_x = random.randint(-self.max_shift, self.max_shift)
+            shift_y = random.randint(-self.max_shift, self.max_shift)
+            if shift_x < 0:
+                new_x = 0
+                orig_x = -shift_x
+            else:
+                new_x = shift_x
+                orig_x = 0
+            if shift_y < 0:
+                new_y = 0
+                orig_y = -shift_y
+            else:
+                new_y = shift_y
+                orig_y = 0
+            new_image = torch.zeros_like(image)
+            img_h, img_w = image.shape[1:]
+            new_h = img_h - abs(shift_y)
+            new_w = img_w - abs(shift_x)
+            new_image[:, new_y:new_y + new_h, new_x:new_x + new_w] = image[:,
+                                                                orig_y:orig_y + new_h,
+                                                                orig_x:orig_x + new_w]
+            boxes_ = target["boxes"].clone()
+            boxes_[..., [0, 2]] += shift_x
+            boxes_[..., [1, 3]] += shift_y
+            boxes_[..., [0, 2]] = boxes_[..., [0, 2]].clamp(0, img_w)
+            boxes_[..., [1, 3]] = boxes_[..., [1, 3]].clamp(0, img_h)
+            target["boxes"] = boxes_
+
+            return new_image, target, mask
 
         return image, target, mask
 
@@ -155,6 +182,7 @@ class TrainTransforms(object):
         self.transforms = Compose([
             ToTensor(),
             RandomHorizontalFlip(),
+            RandomShift(max_shift=32),
             Resize(size, max_size=max_size, random_size=random_size),
             Normalize(mean, std),
             PadImage(max_size=max_size)
