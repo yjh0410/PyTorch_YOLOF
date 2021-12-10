@@ -14,6 +14,7 @@ class YOLOF(nn.Module):
                  conf_thresh = 0.05,
                  nms_thresh = 0.6,
                  trainable=False, 
+                 norm='BN',
                  post_process=False):
         super(YOLOF, self).__init__()
         self.device = device
@@ -39,14 +40,14 @@ class YOLOF(nn.Module):
 
         # head
         self.cls_feat = nn.Sequential(
-            Conv(cfg['head_dims'], cfg['head_dims'], k=3, p=1, s=1),
-            Conv(cfg['head_dims'], cfg['head_dims'], k=3, p=1, s=1)
+            Conv(cfg['head_dims'], cfg['head_dims'], k=3, p=1, s=1, norm=norm),
+            Conv(cfg['head_dims'], cfg['head_dims'], k=3, p=1, s=1, norm=norm)
         )
         self.reg_feat = nn.Sequential(
-            Conv(cfg['head_dims'], cfg['head_dims'], k=3, p=1, s=1),
-            Conv(cfg['head_dims'], cfg['head_dims'], k=3, p=1, s=1),
-            Conv(cfg['head_dims'], cfg['head_dims'], k=3, p=1, s=1),
-            Conv(cfg['head_dims'], cfg['head_dims'], k=3, p=1, s=1)
+            Conv(cfg['head_dims'], cfg['head_dims'], k=3, p=1, s=1, norm=norm),
+            Conv(cfg['head_dims'], cfg['head_dims'], k=3, p=1, s=1, norm=norm),
+            Conv(cfg['head_dims'], cfg['head_dims'], k=3, p=1, s=1, norm=norm),
+            Conv(cfg['head_dims'], cfg['head_dims'], k=3, p=1, s=1, norm=norm)
         )
 
         # head
@@ -255,6 +256,7 @@ def build_model(args, cfg, device, num_classes=80, trainable=False, post_process
                   device=device,
                   num_classes=num_classes,
                   trainable=trainable,
+                  norm=args.norm,
                   conf_thresh=args.conf_thresh,
                   nms_thresh=args.nms_thresh,
                   post_process=post_process)
