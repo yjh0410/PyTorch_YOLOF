@@ -6,5 +6,5 @@ python train.py \
         --img_size 512 \
         --lr 0.01 \
         --norm GN \
-        --wp_iter 500 \
+        --wp_iter 1500 \
         --accumulate 8
