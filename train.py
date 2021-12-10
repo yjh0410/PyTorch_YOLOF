@@ -251,8 +251,8 @@ def train():
                 continue
 
             # Backward and Optimize
+            total_loss.backward()        
             if ni % args.accumulate == 0:
-                total_loss.backward()        
                 optimizer.step()
                 optimizer.zero_grad()
 
