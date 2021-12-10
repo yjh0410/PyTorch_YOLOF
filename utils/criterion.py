@@ -20,7 +20,7 @@ class FocalWithLogitsLoss(nn.Module):
                                                      )
         p_t = p * targets + (1.0 - p) * (1.0 - targets)
         loss = ce_loss * ((1.0 - p_t) ** self.gamma)
-        loss = loss if mask is None else loss * mask[..., None, None]
+        loss = loss if mask is None else loss * mask.flatten(1)[..., None, None]
 
         if self.alpha >= 0:
             alpha_t = self.alpha * targets + (1.0 - self.alpha) * (1.0 - targets)
@@ -77,7 +77,7 @@ class Criterion(nn.Module):
         pred_giou = giou_score(x1y1x2y2_pred, x1y1x2y2_gt)
         # [B x HW x KA,] -> [B, HW, KA,]
         pred_giou = pred_giou.view(B, HW, KA)
-        loss_reg = 1. - pred_giou if mask is None else (1. - pred_giou) * mask[..., None]
+        loss_reg = 1. - pred_giou if mask is None else (1. - pred_giou) * mask.flatten(1)[..., None]
 
         loss_reg = (loss_reg * target_pos).sum([1, 2]) / num_pos
         loss_reg = loss_reg.sum()
@@ -85,22 +85,27 @@ class Criterion(nn.Module):
         return loss_reg
 
 
-    def forward(self, anchor_boxes, outputs, targets):
+    def forward(self, img_size, anchor_boxes, outputs, targets):
         """
+            img_size: (list) [H, W] of the input image.
+            anchor_boxes: (tensor) [1, HW, KA, 4]
             outputs["pred_cls"]: (tensor) [B, HW, KA, C]
             outputs["pred_giou"]: (tensor) [B, HW, KA, 1]
-            outputs["mask"]: (tensor) [B, HW]
+            outputs["mask"]: (tensor) [B, H, W]
             target: (tensor) [B, HW, KA, C+4+1]
         """
+        batch_size = outputs["pred_cls"].size(0)
+        fmp_size = outputs["fmp_size"]
         # make labels
         targets = label_creator(targets=targets, 
+                                img_size=img_size,
+                                fmp_size=fmp_size,
                                 anchor_boxes=anchor_boxes, 
                                 num_classes=self.num_classes,
                                 topk=self.cfg['topk'],
                                 igt=self.cfg['ignore_thresh'])
         targets = targets.to(self.device)
 
-        batch_size = outputs["pred_cls"].size(0)
         # compute class loss
         loss_labels = self.loss_labels(outputs["pred_cls"], targets, outputs["mask"])
         loss_labels /= batch_size

@@ -94,6 +94,7 @@ class YOLOF(nn.Module):
             grid_xy = grid_xy[None, :, None, :].repeat(1, 1, self.num_anchors, 1).to(self.device)
             # [KA, 2] -> [1, 1, KA, 2] -> [1, HW, KA, 2]
             anchor_wh = self.anchor_size[None, None, :, :].repeat(1, fmp_h*fmp_w, 1, 1).to(self.device)
+            anchor_wh = anchor_wh / self.stride
 
             # [1, HW, KA, 4]
             anchor_boxes = torch.cat([grid_xy, anchor_wh], dim=-1)
@@ -203,17 +204,19 @@ class YOLOF(nn.Module):
         # [B, KA*4, H, W] -> [B, KA, 4, H, W] -> [B, H, W, KA, 4] -> [B, HW, KA, 4]
         reg_pred =reg_pred.view(B, -1, 4, H, W).permute(0, 3, 4, 1, 2).contiguous()
         reg_pred = reg_pred.view(B, -1, self.num_anchors, 4)
-        xy_pred = (reg_pred[..., :2] + anchor_boxes[..., :2]) * self.stride
+        xy_pred = reg_pred[..., :2] + anchor_boxes[..., :2]
         wh_pred = reg_pred[..., 2:].exp() * anchor_boxes[..., 2:]
-        xywh_pred = torch.cat([xy_pred, wh_pred], dim=-1) 
         # convert [x, y, w, h] -> [x1, y1, x2, y2]
-        x1y1_pred = xywh_pred[..., :2] - xywh_pred[..., 2:] / 2.0
-        x2y2_pred = xywh_pred[..., :2] + xywh_pred[..., 2:] / 2.0
+        x1y1_pred = xy_pred - wh_pred / 2.0
+        x2y2_pred = xy_pred + wh_pred / 2.0
         box_pred = torch.cat([x1y1_pred, x2y2_pred], dim=-1)
 
         if self.post_process:
             # B = 1
             scores = normalized_cls_pred.sigmoid()[0]
+
+            # resclae bbox
+            box_pred = box_pred * self.stride
 
             # normalize bbox
             box_pred[..., [0, 2]] /= img_w
@@ -233,12 +236,13 @@ class YOLOF(nn.Module):
             if mask is not None:
                 # [B, H, W]
                 mask = torch.nn.functional.interpolate(mask[None], size=[H, W]).bool()[0]
-                # [B, HW]
-                mask = mask.flatten(1)
+                # [B, H, W]
+                # mask = mask.flatten(1)
 
             outputs = {"pred_cls": normalized_cls_pred,
                         "pred_box": box_pred,
-                        "mask": None}
+                        "mask": mask,
+                        "fmp_size": [H, W]}
             return outputs 
 
 

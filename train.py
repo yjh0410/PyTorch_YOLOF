@@ -224,7 +224,8 @@ def train():
             outputs = model(images, mask=masks)
 
             # compute loss
-            cls_loss, reg_loss, total_loss = criterion(anchor_boxes=net.anchor_boxes,
+            cls_loss, reg_loss, total_loss = criterion(img_size=images.shape[2:],
+                                                       anchor_boxes=net.anchor_boxes,
                                                        outputs=outputs,
                                                        targets=targets)
             total_loss = total_loss / args.accumulate
