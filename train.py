@@ -385,6 +385,11 @@ def set_lr(optimizer, lr):
 
 
 def vis_data(images, targets, masks):
+    """
+        images: (tensor) [B, 3, H, W]
+        targets: (list) a list of targets
+        masks: (tensor) [B, H, W]
+    """
     batch_size = images.size(0)
     # vis data
     rgb_mean=np.array((0.485, 0.456, 0.406), dtype=np.float32)
@@ -420,6 +425,36 @@ def vis_data(images, targets, masks):
             cv2.rectangle(mask, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
 
         cv2.imshow('mask', mask)
+        cv2.waitKey(0)
+
+
+def vis_targets(images, targets):
+    """
+        images: (tensor) [B, 3, H, W]
+        targets: (tensor) [B, N, KA, C+4+1]
+    """
+    batch_size = images.size(0)
+    # vis data
+    rgb_mean=np.array((0.485, 0.456, 0.406), dtype=np.float32)
+    rgb_std=np.array((0.229, 0.224, 0.225), dtype=np.float32)
+
+    for bi in range(batch_size):
+        # to numpy
+        image = images[bi].permute(1, 2, 0).cpu().numpy()
+        # denormalize
+        image = ((image * rgb_std + rgb_mean)*255).astype(np.uint8)
+        # to BGR
+        image = image[..., (2, 1, 0)]
+        image = image.copy()
+        img_h, img_w = image.shape[:2]
+
+        boxes = targets[bi]["boxes"]
+        labels = targets[bi]["labels"]
+        for box, label in zip(boxes, labels):
+            x1, y1, x2, y2 = box
+            cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
+
+        cv2.imshow('groundtruth', image)
         cv2.waitKey(0)
 
 
