@@ -2,9 +2,9 @@ python train.py \
         --cuda \
         -d coco \
         -v yolof_r50_C5_1x \
-        --batch_size 12 \
-        --img_size 512 \
+        --batch_size 4 \
+        --img_size 800 \
         --lr 0.01 \
         --norm GN \
         --wp_iter 1500 \
-        --accumulate 5
+        --accumulate 8
