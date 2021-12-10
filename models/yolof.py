@@ -242,8 +242,7 @@ class YOLOF(nn.Module):
 
             outputs = {"pred_cls": normalized_cls_pred,
                         "pred_box": box_pred,
-                        "mask": None,
-                        "fmp_size": [H, W]}
+                        "mask": None}
             return outputs 
 
 
