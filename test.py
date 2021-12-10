@@ -171,6 +171,7 @@ if __name__ == '__main__':
         num_classes = 20
         dataset = VOCDetection(
                         data_dir=data_dir,
+                        image_sets=[('2007', 'test')]
                         transform=None)
 
     elif args.dataset == 'coco':
