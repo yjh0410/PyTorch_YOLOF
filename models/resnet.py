@@ -154,6 +154,8 @@ class ResNet(nn.Module):
             p.requires_grad = False
         for p in self.bn1.parameters():
             p.requires_grad = False
+        for p in self.layer1.parameters():
+            p.requires_grad = False
 
     def forward(self, x):
         x = self.conv1(x)
