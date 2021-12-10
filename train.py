@@ -153,10 +153,10 @@ def train():
 
     # compute FLOPs and Params
     if local_rank == 0:
-        model.trainable = False
+        model.post_process = True
         model.eval()
         FLOPs_and_Params(model=model, size=args.img_size, device=device)
-        model.trainable = True
+        model.post_process = False
         model.train()
 
     # DDP
