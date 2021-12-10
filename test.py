@@ -198,10 +198,10 @@ if __name__ == '__main__':
 
     # build model
     model = build_model(args=args, 
+                        cfg=cfg,
                         device=device, 
                         num_classes=num_classes, 
                         trainable=False, 
-                        anchor_size=cfg['anchor_size'], 
                         post_process=True)
 
     # load weight
