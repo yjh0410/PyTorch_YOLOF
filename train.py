@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument('--batch_size', default=16, type=int, 
                         help='Batch size for training')
     parser.add_argument('--img_size', type=int, default=800,
-                        help='The min size of the input image')
+                        help='The shorter size of the input image')
     parser.add_argument('--start_epoch', type=int, default=0,
                         help='start epoch to train')
     parser.add_argument('--num_workers', default=4, type=int, 
