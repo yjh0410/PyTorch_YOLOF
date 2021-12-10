@@ -37,6 +37,8 @@ def parse_args():
                         help='Batch size for training')
     parser.add_argument('--img_size', type=int, default=800,
                         help='The shorter size of the input image')
+    parser.add_argument('--lr', type=float, default=0.12,
+                        help='Learning rate')
     parser.add_argument('--start_epoch', type=int, default=0,
                         help='start epoch to train')
     parser.add_argument('--num_workers', default=4, type=int, 
@@ -176,7 +178,7 @@ def train():
         tblogger = SummaryWriter(log_path)
     
     # optimizer setup
-    tmp_lr = base_lr = cfg['lr']
+    tmp_lr = base_lr = args.lr
     optimizer = optim.SGD(model.parameters(), 
                             lr=tmp_lr, 
                             momentum=0.9,
