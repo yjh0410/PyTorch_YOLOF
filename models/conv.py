@@ -20,13 +20,13 @@ class Conv(nn.Module):
             if act:
                 self.convs = nn.Sequential(
                     nn.Conv2d(c1, c2, k, stride=s, padding=p, dilation=d, groups=g, bias=bias),
-                    nn.GroupNorm(8, c2),
+                    nn.GroupNorm(32, c2),
                     nn.ReLU(inplace=True)
                 )
             else:
                 self.convs = nn.Sequential(
                     nn.Conv2d(c1, c2, k, stride=s, padding=p, dilation=d, groups=g, bias=bias),
-                    nn.GroupNorm(8, c2)
+                    nn.GroupNorm(32, c2)
                 )
         else:
             print('Unkown norm layer !!')
