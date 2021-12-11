@@ -28,9 +28,10 @@ class YOLOF(nn.Module):
         self.post_process = post_process
 
         # backbone
-        self.backbone, feature_channels, self.stride = build_backbone(pretrained=trainable,
-                                                                      freeze=trainable,
-                                                                      model=cfg['backbone'])
+        self.backbone, feature_channels, self.stride = build_backbone(
+                                                            model_name=cfg['backbone'],
+                                                            pretrained=trainable,
+                                                            return_interm_layers=False)
 
         # neck
         self.neck = DilatedEncoder(c1=feature_channels, 
@@ -175,7 +176,7 @@ class YOLOF(nn.Module):
     def forward(self, x, mask=None):
         img_h, img_w = x.shape[2:]
         # backbone
-        x = self.backbone(x)
+        x = self.backbone(x)[-1]
 
         # neck
         x = self.neck(x)

@@ -1,271 +1,110 @@
+# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
+"""
+Backbone modules.
+"""
+from collections import OrderedDict
+
 import torch
-import torch.nn as nn
-import torch.utils.model_zoo as model_zoo
+import torch.nn.functional as F
+import torchvision
+from torch import nn
+from torchvision.models._utils import IntermediateLayerGetter
 
 
-__all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
-           'resnet152']
+class FrozenBatchNorm2d(torch.nn.Module):
+    """
+    BatchNorm2d where the batch statistics and the affine parameters are fixed.
 
+    Copy-paste from torchvision.misc.ops with added eps before rqsrt,
+    without which any other models than torchvision.models.resnet[18,34,50,101]
+    produce nans.
+    """
 
-model_urls = {
-    'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
-    'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
-    'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
-    'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
-    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
-}
+    def __init__(self, n):
+        super(FrozenBatchNorm2d, self).__init__()
+        self.register_buffer("weight", torch.ones(n))
+        self.register_buffer("bias", torch.zeros(n))
+        self.register_buffer("running_mean", torch.zeros(n))
+        self.register_buffer("running_var", torch.ones(n))
 
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        num_batches_tracked_key = prefix + 'num_batches_tracked'
+        if num_batches_tracked_key in state_dict:
+            del state_dict[num_batches_tracked_key]
 
-def conv3x3(in_planes, out_planes, stride=1):
-    """3x3 convolution with padding"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
-
-def conv1x1(in_planes, out_planes, stride=1):
-    """1x1 convolution"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
-
-class BasicBlock(nn.Module):
-    expansion = 1
-
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
-        super(BasicBlock, self).__init__()
-        self.conv1 = conv3x3(inplanes, planes, stride)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv2 = conv3x3(planes, planes)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.downsample = downsample
-        self.stride = stride
+        super(FrozenBatchNorm2d, self)._load_from_state_dict(
+            state_dict, prefix, local_metadata, strict,
+            missing_keys, unexpected_keys, error_msgs)
 
     def forward(self, x):
-        identity = x
+        # move reshapes to the beginning
+        # to make it fuser-friendly
+        w = self.weight.reshape(1, -1, 1, 1)
+        b = self.bias.reshape(1, -1, 1, 1)
+        rv = self.running_var.reshape(1, -1, 1, 1)
+        rm = self.running_mean.reshape(1, -1, 1, 1)
+        eps = 1e-5
+        scale = w * (rv + eps).rsqrt()
+        bias = b - rm * scale
+        return x * scale + bias
 
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
 
-        out = self.conv2(out)
-        out = self.bn2(out)
+class BackboneBase(nn.Module):
 
-        if self.downsample is not None:
-            identity = self.downsample(x)
-
-        out += identity
-        out = self.relu(out)
-
-        return out
-
-class Bottleneck(nn.Module):
-    expansion = 4
-
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
-        super(Bottleneck, self).__init__()
-        self.conv1 = conv1x1(inplanes, planes)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = conv3x3(planes, planes, stride)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.conv3 = conv1x1(planes, planes * self.expansion)
-        self.bn3 = nn.BatchNorm2d(planes * self.expansion)
-        self.relu = nn.ReLU(inplace=True)
-        self.downsample = downsample
-        self.stride = stride
+    def __init__(self, backbone: nn.Module, train_backbone: bool, num_channels: int, return_interm_layers: bool):
+        super().__init__()
+        for name, parameter in backbone.named_parameters():
+            if not train_backbone or 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
+                parameter.requires_grad_(False)
+        if return_interm_layers:
+            return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
+        else:
+            return_layers = {'layer4': "0"}
+        self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
+        self.num_channels = num_channels
 
     def forward(self, x):
-        identity = x
+        xs = self.body(x)
+        fmp_list = []
+        for name, fmp in xs.items():
+            fmp_list.append(fmp)
 
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-        out = self.relu(out)
-
-        out = self.conv3(out)
-        out = self.bn3(out)
-
-        if self.downsample is not None:
-            identity = self.downsample(x)
-
-        out += identity
-        out = self.relu(out)
-
-        return out
-
-class ResNet(nn.Module):
-
-    def __init__(self, block, layers, zero_init_residual=False):
-        super(ResNet, self).__init__()
-        self.inplanes = 64
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
-
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-
-        # Zero-initialize the last BN in each residual branch,
-        # so that the residual branch starts with zeros, and each residual block behaves like an identity.
-        # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
-        if zero_init_residual:
-            for m in self.modules():
-                if isinstance(m, Bottleneck):
-                    nn.init.constant_(m.bn3.weight, 0)
-                elif isinstance(m, BasicBlock):
-                    nn.init.constant_(m.bn2.weight, 0)
+        return fmp_list
 
 
-    def _make_layer(self, block, planes, blocks, stride=1):
-        downsample = None
-        if stride != 1 or self.inplanes != planes * block.expansion:
-            downsample = nn.Sequential(
-                conv1x1(self.inplanes, planes * block.expansion, stride),
-                nn.BatchNorm2d(planes * block.expansion),
-            )
-
-        layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample))
-        self.inplanes = planes * block.expansion
-        for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
-
-        return nn.Sequential(*layers)
-
-    def freeze(self):
-        '''Freeze BatchNorm layers.'''
-        print('freeze bn ...')
-        for m in self.modules():
-            if isinstance(m, nn.BatchNorm2d):
-                m.eval()
-
-        for p in self.conv1.parameters():
-            p.requires_grad = False
-        for p in self.bn1.parameters():
-            p.requires_grad = False
-
-        # for p in self.layer1.parameters():
-        #     p.requires_grad = False
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
-
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
-
-        return x
-            
-def resnet18(pretrained=False, freeze=False, **kwargs):
-    """Constructs a ResNet-18 model.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
-    if pretrained:
-        # strict = False as we don't need fc layer params.
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet18']), strict=False)
-        # freeze bn
-        if freeze:
-            model.freeze()
-
-    return model
-
-def resnet34(pretrained=False, freeze=False, **kwargs):
-    """Constructs a ResNet-34 model.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(BasicBlock, [3, 4, 6, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet34']), strict=False)
-        # freeze bn
-        if freeze:
-            model.freeze()
-
-    return model
-
-def resnet50(pretrained=False, freeze=False, **kwargs):
-    """Constructs a ResNet-50 model.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet50']), strict=False)
-        # freeze bn
-        if freeze:
-            model.freeze()
-
-    return model
-
-def resnet101(pretrained=False, freeze=False, **kwargs):
-    """Constructs a ResNet-101 model.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet101']), strict=False)
-        # freeze bn
-        if freeze:
-            model.freeze()
-
-    return model
-
-def resnet152(pretrained=False, freeze=False, **kwargs):
-    """Constructs a ResNet-152 model.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(Bottleneck, [3, 8, 36, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet152']))
-        # freeze bn
-        if freeze:
-            model.freeze()
-
-    return model
+class Backbone(BackboneBase):
+    """ResNet backbone with frozen BatchNorm."""
+    def __init__(self, 
+                 name: str,
+                 pretrained: bool,
+                 train_backbone: bool,
+                 return_interm_layers: bool,
+                 dilation: bool):
+        backbone = getattr(torchvision.models, name)(
+            replace_stride_with_dilation=[False, False, dilation],
+            pretrained=pretrained, norm_layer=FrozenBatchNorm2d)
+        num_channels = 512 if name in ('resnet18', 'resnet34') else 2048
+        super().__init__(backbone, train_backbone, num_channels, return_interm_layers)
 
 
-# build backbone
-def build_backbone(pretrained=False, freeze=False, model='r18'):
-    # return: model, feature channels, stride
-    if model == 'r18':
-        return resnet18(pretrained=pretrained, freeze=freeze), 512, 32
-    elif model == 'r34':
-        return resnet34(pretrained=pretrained, freeze=freeze), 512, 32
-    elif model == 'r50':
-        return resnet50(pretrained=pretrained, freeze=freeze), 2048, 32
-    elif model == 'r101':
-        return resnet101(pretrained=pretrained, freeze=freeze), 2048, 32
+def build_backbone(model_name='resnet18', pretrained=False, train_backbone=True, return_interm_layers=False):
+    if model_name in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnext101_32x8d']:
+        backbone = Backbone(model_name, pretrained, train_backbone, return_interm_layers, dilation=False)
+        output_stride = 32
+    elif model_name in ['resnet50-d', 'resnet101-d']:
+        backbone = Backbone(model_name[:-2], pretrained, train_backbone, return_interm_layers, dilation=True)
+        output_stride = 16
+    return backbone, backbone.num_channels, output_stride
 
 
-if __name__=='__main__':
-    #model = torchvision.models.resnet50()
-    print("found ", torch.cuda.device_count(), " GPU(s)")
-    device = torch.device("cuda")
-    model = resnet101(detection=True).to(device)
+if __name__ == '__main__':
+    model, feature_channels, output_stride = build_backbone(model_name='resnet18', pretrained=True, return_interm_layers=True)
     print(model)
+    print(feature_channels)
+    print(output_stride)
 
-    input = torch.randn(1, 3, 512, 512).to(device)
-    output = model(input)
+    x = torch.randn(2, 3, 224, 224)
+    y = model(x)
+    for f in y:
+        print(f.size())

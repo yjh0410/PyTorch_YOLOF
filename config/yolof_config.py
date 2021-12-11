@@ -5,7 +5,7 @@ yolof_config = {
     # 1x
     'yolof_r50_C5_1x': {
         # model
-        'backbone': 'r50',
+        'backbone': 'resnet50',
         'dilated_block': [2, 4, 6, 8],
         'head_dims': 512,
         'bottle_ratio': 0.25,
@@ -22,7 +22,7 @@ yolof_config = {
     },
     'yolof_r101_C5_1x': {
         # model
-        'backbone': 'r101',
+        'backbone': 'resnet101',
         'dilated_block': [2, 4, 6, 8],
         'head_dims': 512,
         'bottle_ratio': 0.25,
