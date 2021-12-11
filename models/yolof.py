@@ -31,6 +31,7 @@ class YOLOF(nn.Module):
         self.backbone, feature_channels, self.stride = build_backbone(
                                                             model_name=cfg['backbone'],
                                                             pretrained=trainable,
+                                                            train_backbone=True,
                                                             return_interm_layers=False)
 
         # neck
