@@ -148,8 +148,7 @@ class ResNet(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.BatchNorm2d):
                 m.eval()
-        # freeze stage = 1
-        print('freeze stage 1 ...')
+
         for p in self.conv1.parameters():
             p.requires_grad = False
         for p in self.bn1.parameters():
