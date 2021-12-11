@@ -216,11 +216,10 @@ class YOLOF(nn.Module):
 
         if self.post_process:
             with torch.no_grad():
-                # [B, HW, KA, C] -> [HW x KA, C]
+                # [B, HW, KA, C] -> [HW x KA, C], where B = 1.
                 normalized_cls_pred = normalized_cls_pred[0].view(-1, self.num_classes)
                 box_pred = box_pred[0].view(-1, 4)
 
-                # B = 1
                 scores = normalized_cls_pred.sigmoid()
 
                 # rescale bbox
