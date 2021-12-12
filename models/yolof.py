@@ -96,13 +96,13 @@ class YOLOF(nn.Module):
             # [H, W, 2] -> [HW, 2]
             grid_xy = torch.stack([grid_x, grid_y], dim=-1).float().view(-1, 2) + 0.5
             # [HW, 2] -> [1, HW, 1, 2] -> [1, HW, KA, 2] 
-            grid_xy = grid_xy[None, :, None, :].repeat(1, 1, self.num_anchors, 1).to(self.device)
+            anchor_xy = grid_xy[None, :, None, :].repeat(1, 1, self.num_anchors, 1).to(self.device)
+            anchor_xy *= self.stride
             # [KA, 2] -> [1, 1, KA, 2] -> [1, HW, KA, 2]
             anchor_wh = self.anchor_size[None, None, :, :].repeat(1, fmp_h*fmp_w, 1, 1).to(self.device)
-            anchor_wh = anchor_wh / self.stride
 
             # [1, HW, KA, 4]
-            anchor_boxes = torch.cat([grid_xy, anchor_wh], dim=-1)
+            anchor_boxes = torch.cat([anchor_xy, anchor_wh], dim=-1)
 
             self.anchor_boxes = anchor_boxes
             self.fmp_size = fmp_size
@@ -119,8 +119,8 @@ class YOLOF(nn.Module):
         # dy = ty * h_anchor
         pred_dxdy = (pred_reg[..., :2] * anchor_boxes[..., 2:])
         pred_dxdy = torch.clamp(pred_dxdy, 
-                                min=-self.ctr_clamp / self.stride,
-                                max=self.ctr_clamp / self.stride)
+                                min=-self.ctr_clamp,
+                                max=self.ctr_clamp)
         # x = x_anchor + dx
         # y = y_anchor + dy
         pred_ctr_xy = anchor_boxes[..., :2] + pred_dxdy
@@ -246,9 +246,6 @@ class YOLOF(nn.Module):
                 box_pred = box_pred[0].view(-1, 4)
 
                 scores = normalized_cls_pred.sigmoid()
-
-                # rescale bbox
-                box_pred = box_pred * self.stride
 
                 # normalize bbox
                 box_pred[..., [0, 2]] /= img_w

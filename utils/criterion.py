@@ -111,7 +111,7 @@ class Criterion(nn.Module):
 
         # vis labels
         if vis_labels:
-            vis_targets(images, targets, anchor_boxes, stride=32)
+            vis_targets(images, targets, anchor_boxes)
 
         # compute class loss
         loss_labels = self.loss_labels(outputs["pred_cls"], targets, outputs["mask"])
