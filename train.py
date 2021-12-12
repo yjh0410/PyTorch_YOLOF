@@ -212,7 +212,6 @@ def train():
         if args.distributed:
             dataloader.sampler.set_epoch(epoch)            
 
-        lr_scheduler.step()
         # train one epoch
         for iter_i, (images, targets, masks) in enumerate(dataloader):
             ni = iter_i + epoch * epoch_size
@@ -288,6 +287,8 @@ def train():
 
                 t0 = time.time()
 
+        lr_scheduler.step()
+        
         # evaluation
         if (epoch + 1) % args.eval_epoch == 0 or (epoch + 1) == max_epoch:
             model_eval = model.module if args.distributed else model
