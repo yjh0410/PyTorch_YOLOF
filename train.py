@@ -190,16 +190,17 @@ def train():
 
         tblogger = SummaryWriter(log_path)
     
-    # optimizer setup
+    # optimizer, lr scheduler
     tmp_lr = base_lr = args.lr
     optimizer = optim.SGD(param_dicts, 
                          lr=tmp_lr,
                          momentum=0.9,
                          weight_decay=1e-4)
 
+    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=cfg['lr_epoch'])
+
     # training configuration
     max_epoch = cfg['max_epoch']
-    lr_epoch = cfg['lr_epoch']
     batch_size = args.batch_size
     epoch_size = len(dataset) // (batch_size * args.num_gpu)
     best_map = -1.
@@ -211,11 +212,7 @@ def train():
         if args.distributed:
             dataloader.sampler.set_epoch(epoch)            
 
-        # use step lr decay
-        if epoch in lr_epoch:
-            tmp_lr = tmp_lr * 0.1
-            set_lr(optimizer, tmp_lr)
-
+        lr_scheduler.step()
         # train one epoch
         for iter_i, (images, targets, masks) in enumerate(dataloader):
             ni = iter_i + epoch * epoch_size
