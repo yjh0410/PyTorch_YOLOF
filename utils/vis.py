@@ -75,7 +75,7 @@ def vis_targets(images, targets, anchor_boxes):
                     # gt box
                     box = t[-5:-1]
                     x1, y1, x2, y2 = box
-                    cv2.rectangle(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                    cv2.rectangle(image, (int(x1), int(y1), (int(x2), int(y2)), (0, 0, 255), 2)
 
                     # anchor box
                     ab_box = anchor_boxes[j, k]
