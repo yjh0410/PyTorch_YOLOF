@@ -115,17 +115,20 @@ class YOLOF(nn.Module):
             anchor_boxes: (List[tensor]) [1, HW, KA, 4]
             pred_reg: (List[tensor]) [B, HW, KA, 4]
         """
-        # dx = tx * w_anchor,  dy = ty * h_anchor
+        # dx = tx * w_anchor
+        # dy = ty * h_anchor
         pred_dxdy = (pred_reg[..., :2] * anchor_boxes[..., 2:])
         pred_dxdy = torch.clamp(pred_dxdy, 
                                 min=-self.ctr_clamp / self.stride,
                                 max=self.ctr_clamp / self.stride)
-        # x = x_anchor + dx,  y = y_anchor + dy
+        # x = x_anchor + dx
+        # y = y_anchor + dy
         pred_ctr_xy = anchor_boxes[..., :2] + pred_dxdy
 
-        # w = w_anchor * exp(tw),  h = h_anchor * exp(th)
+        # w = w_anchor * exp(tw)
+        # h = h_anchor * exp(th)
         pred_dwdh = torch.clamp(pred_reg[..., 2:], max=self.scale_clamp)
-        pred_wh = anchor_boxes[..., 2:] * pred_dwdh
+        pred_wh = anchor_boxes[..., 2:] * pred_dwdh.exp()
 
         # convert [x, y, w, h] -> [x1, y1, x2, y2]
         pred_x1y1 = pred_ctr_xy - 0.5 * pred_wh
