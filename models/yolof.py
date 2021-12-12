@@ -10,11 +10,11 @@ class YOLOF(nn.Module):
     def __init__(self, 
                  cfg,
                  device, 
-                 num_classes=20, 
+                 num_classes = 20, 
                  conf_thresh = 0.05,
                  nms_thresh = 0.6,
-                 trainable=False, 
-                 norm='BN',
+                 trainable = False, 
+                 norm = 'BN',
                  post_process=False):
         super(YOLOF, self).__init__()
         self.device = device
