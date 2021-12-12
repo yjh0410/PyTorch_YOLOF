@@ -37,8 +37,10 @@ def parse_args():
                         help='Batch size for training')
     parser.add_argument('--img_size', type=int, default=800,
                         help='The shorter size of the input image')
-    parser.add_argument('--lr', type=float, default=0.12,
+    parser.add_argument('--lr', type=float, default=0.03,
                         help='Learning rate')
+    parser.add_argument('--lr_backbone', type=float, default=0.01,
+                        help='Learning rate of backbone. It should be the one-third of lr')
     parser.add_argument('--start_epoch', type=int, default=0,
                         help='start epoch to train')
     parser.add_argument('--num_workers', default=4, type=int, 
@@ -162,10 +164,21 @@ def train():
         model.train()
 
     # DDP
+    model_without_ddp = model
     if args.distributed and args.num_gpu > 1:
         print('using DDP ...')
         model = DDP(model, device_ids=[local_rank], output_device=local_rank)
-     
+        model_without_ddp = model.module
+
+    # Model parameters
+    param_dicts = [
+        {"params": [p for n, p in model_without_ddp.named_parameters() if "backbone" not in n and p.requires_grad]},
+        {
+            "params": [p for n, p in model_without_ddp.named_parameters() if "backbone" in n and p.requires_grad],
+            "lr": args.lr_backbone,
+        },
+    ]
+    
     # use tfboard
     tblogger = None
     if args.tfboard:
@@ -179,10 +192,10 @@ def train():
     
     # optimizer setup
     tmp_lr = base_lr = args.lr
-    optimizer = optim.SGD(model.parameters(), 
-                            lr=tmp_lr, 
-                            momentum=0.9,
-                            weight_decay=1e-4)
+    optimizer = optim.SGD(param_dicts, 
+                         lr=tmp_lr,
+                         momentum=0.9,
+                         weight_decay=1e-4)
 
     # training configuration
     max_epoch = cfg['max_epoch']

@@ -5,5 +5,6 @@ python train.py \
         --batch_size 16 \
         --img_size 800 \
         --lr 0.03 \
+        --lr_backbone 0.01 \
         --wp_iter 500 \
         --accumulate 1
