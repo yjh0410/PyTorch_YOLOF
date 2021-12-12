@@ -37,7 +37,7 @@ def parse_args():
                         help='Batch size for training')
     parser.add_argument('--img_size', type=int, default=800,
                         help='The shorter size of the input image')
-    parser.add_argument('--lr', type=float, default=0.03,
+    parser.add_argument('--lr', type=float, default=0.01,
                         help='Learning rate')
     parser.add_argument('--lr_backbone', type=float, default=0.01,
                         help='Learning rate of backbone. It should be the one-third of lr')
