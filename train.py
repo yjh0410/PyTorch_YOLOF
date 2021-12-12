@@ -178,7 +178,6 @@ def train():
             "lr": args.lr_backbone,
         },
     ]
-    print(len(param_dicts))
     
     # use tfboard
     tblogger = None

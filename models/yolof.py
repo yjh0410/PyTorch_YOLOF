@@ -26,6 +26,8 @@ class YOLOF(nn.Module):
         self.anchor_size = torch.as_tensor(cfg['anchor_size'])
         self.num_anchors = len(cfg['anchor_size'])
         self.post_process = post_process
+        self.ctr_clamp = cfg['ctr_clamp']
+        self.scale_clamp = np.log(1000. / 16)
 
         # backbone
         self.backbone, feature_channels, self.stride = build_backbone(
@@ -107,6 +109,31 @@ class YOLOF(nn.Module):
 
             return anchor_boxes
         
+
+    def decode_boxes(self, anchor_boxes, pred_reg):
+        """
+            anchor_boxes: (List[tensor]) [1, HW, KA, 4]
+            pred_reg: (List[tensor]) [B, HW, KA, 4]
+        """
+        # dx = tx * w_anchor,  dy = ty * h_anchor
+        pred_dxdy = (pred_reg[..., :2] * anchor_boxes[..., 2:])
+        pred_dxdy = torch.clamp(pred_dxdy, 
+                                min=-self.ctr_clamp / self.stride,
+                                max=self.ctr_clamp / self.stride)
+        # x = x_anchor + dx,  y = y_anchor + dy
+        pred_ctr_xy = anchor_boxes[..., :2] + pred_dxdy
+
+        # w = w_anchor * exp(tw),  h = h_anchor * exp(th)
+        pred_dwdh = torch.clamp(pred_reg[..., 2:], max=self.scale_clamp)
+        pred_wh = anchor_boxes[..., 2:] * pred_dwdh
+
+        # convert [x, y, w, h] -> [x1, y1, x2, y2]
+        pred_x1y1 = pred_ctr_xy - 0.5 * pred_wh
+        pred_x2y2 = pred_ctr_xy + 0.5 * pred_wh
+        pred_box = torch.cat([pred_x1y1, pred_x2y2], dim=-1)
+
+        return pred_box
+
 
     def nms(self, dets, scores):
         """"Pure Python NMS."""
@@ -207,12 +234,7 @@ class YOLOF(nn.Module):
         # [B, KA*4, H, W] -> [B, KA, 4, H, W] -> [B, H, W, KA, 4] -> [B, HW, KA, 4]
         reg_pred =reg_pred.view(B, -1, 4, H, W).permute(0, 3, 4, 1, 2).contiguous()
         reg_pred = reg_pred.view(B, -1, self.num_anchors, 4)
-        xy_pred = reg_pred[..., :2] + anchor_boxes[..., :2]
-        wh_pred = reg_pred[..., 2:].exp() * anchor_boxes[..., 2:]
-        # convert [x, y, w, h] -> [x1, y1, x2, y2]
-        x1y1_pred = xy_pred - wh_pred / 2.0
-        x2y2_pred = xy_pred + wh_pred / 2.0
-        box_pred = torch.cat([x1y1_pred, x2y2_pred], dim=-1)
+        box_pred = self.decode_boxes(anchor_boxes, reg_pred)
 
         if self.post_process:
             with torch.no_grad():
