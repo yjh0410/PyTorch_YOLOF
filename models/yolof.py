@@ -26,8 +26,6 @@ class YOLOF(nn.Module):
         self.anchor_size = torch.as_tensor(cfg['anchor_size'])
         self.num_anchors = len(cfg['anchor_size'])
         self.post_process = post_process
-        self.ctr_clamp = cfg['ctr_clamp']
-        self.scale_clamp = np.log(1000. / 16)
 
         # backbone
         self.backbone, feature_channels, self.stride = build_backbone(
@@ -97,9 +95,10 @@ class YOLOF(nn.Module):
             grid_xy = torch.stack([grid_x, grid_y], dim=-1).float().view(-1, 2) + 0.5
             # [HW, 2] -> [1, HW, 1, 2] -> [1, HW, KA, 2] 
             anchor_xy = grid_xy[None, :, None, :].repeat(1, 1, self.num_anchors, 1).to(self.device)
-            anchor_xy *= self.stride
+
             # [KA, 2] -> [1, 1, KA, 2] -> [1, HW, KA, 2]
             anchor_wh = self.anchor_size[None, None, :, :].repeat(1, fmp_h*fmp_w, 1, 1).to(self.device)
+            anchor_wh = anchor_wh / self.stride
 
             # [1, HW, KA, 4]
             anchor_boxes = torch.cat([anchor_xy, anchor_wh], dim=-1)
@@ -115,20 +114,13 @@ class YOLOF(nn.Module):
             anchor_boxes: (List[tensor]) [1, HW, KA, 4]
             pred_reg: (List[tensor]) [B, HW, KA, 4]
         """
-        # dx = tx * w_anchor
-        # dy = ty * h_anchor
-        pred_dxdy = (pred_reg[..., :2] * anchor_boxes[..., 2:])
-        pred_dxdy = torch.clamp(pred_dxdy, 
-                                min=-self.ctr_clamp,
-                                max=self.ctr_clamp)
         # x = x_anchor + dx
         # y = y_anchor + dy
-        pred_ctr_xy = anchor_boxes[..., :2] + pred_dxdy
+        pred_ctr_xy = anchor_boxes[..., :2] + pred_reg[..., :2]
 
         # w = w_anchor * exp(tw)
         # h = h_anchor * exp(th)
-        pred_dwdh = torch.clamp(pred_reg[..., 2:], max=self.scale_clamp)
-        pred_wh = anchor_boxes[..., 2:] * pred_dwdh.exp()
+        pred_wh = anchor_boxes[..., 2:] * pred_reg[..., 2:].exp()
 
         # convert [x, y, w, h] -> [x1, y1, x2, y2]
         pred_x1y1 = pred_ctr_xy - 0.5 * pred_wh
@@ -242,22 +234,20 @@ class YOLOF(nn.Module):
         if self.post_process:
             with torch.no_grad():
                 # [B, HW, KA, C] -> [HW x KA, C], where B = 1.
-                normalized_cls_pred = normalized_cls_pred[0].view(-1, self.num_classes)
-                box_pred = box_pred[0].view(-1, 4)
-
-                scores = normalized_cls_pred.sigmoid()
-
-                # normalize bbox
-                box_pred[..., [0, 2]] /= img_w
-                box_pred[..., [1, 3]] /= img_h
-                box_pred = box_pred.clamp(0., 1.)
+                scores = normalized_cls_pred[0].view(-1, self.num_classes).sigmoid()
+                bboxes = box_pred[0].view(-1, 4) * self.stride
 
                 # to cpu
                 scores = scores.cpu().numpy()
-                bboxes = box_pred.cpu().numpy()
+                bboxes = bboxes.cpu().numpy()
 
                 # post-process
                 bboxes, scores, cls_inds = self.postprocess(bboxes, scores)
+
+                # normalize bbox
+                bboxes[..., [0, 2]] /= img_w
+                bboxes[..., [1, 3]] /= img_h
+                bboxes = bboxes.clip(0., 1.)
 
                 return bboxes, scores, cls_inds
 

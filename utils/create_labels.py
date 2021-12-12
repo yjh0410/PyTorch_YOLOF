@@ -70,7 +70,11 @@ def label_creator(targets,
         for box, label in zip(boxes_i, labels_i):
             cls_id = int(label)
             x1, y1, x2, y2 = box
-            gt_box = np.array([[x1, y1, x2, y2]])
+            x1s = x1 / stride
+            y1s = y1 / stride
+            x2s = x2 / stride
+            y2s = y2 / stride
+            gt_box = np.array([[x1s, y1s, x2s, y2s]])
 
             # compute IoU
             iou = compute_iou(anchor_boxes, gt_box)
@@ -86,7 +90,7 @@ def label_creator(targets,
                     grid_idx = iou_sorted_idx[k]
                     target_tensor[bi, grid_idx, :num_classes] = 0.0 # avoiding the multi labels for one grid cell
                     target_tensor[bi, grid_idx, cls_id] = 1.0
-                    target_tensor[bi, grid_idx, num_classes:num_classes+4] = np.array([x1, y1, x2, y2])
+                    target_tensor[bi, grid_idx, num_classes:num_classes+4] = np.array([x1s, y1s, x2s, y2s])
                     target_tensor[bi, grid_idx, -1] = 1.0
 
     # [B, HW, KA, cls+box+pos]

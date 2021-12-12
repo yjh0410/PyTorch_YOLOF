@@ -2,7 +2,12 @@
 A PyTorch version of You Only Look at One-level Feature object detector.
 
 The input image must be resized to have their shorter side being 800 and their longer side less or equal to
-1333. However, I recently don't have enough GPUs to debug this project.
+1333. 
+
+During reproducing the YOLOF, I found many tricks used in YOLOF but the baseline RetinaNet dosen't use those tricks.
+For example, YOLOF takes advantage of RandomShift, CTR_CLAMP, LR_BACKBONE, big batchsize(like 64), negative prediction threshold. Is it really fair that YOLO use these tricks to compare with RetinaNet?
+
+In a other word, whether the YOLOF can still work without those tricks?
 
 # Requirements
 - We recommend you to use Anaconda to create a conda environment:
