@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 
-def compute_iou(anchor_boxes, target_box):
+def compute_iou_dist(anchor_boxes, target_box):
     """
     Input:
         anchor_boxes : [N, 4]
@@ -36,7 +36,10 @@ def compute_iou(anchor_boxes, target_box):
     # IoU
     iou = intersection_area / union_area
 
-    return iou # [HW x KA]
+    # distance
+    dist = np.abs(anchor_boxes_ - target_box).sum(-1)
+
+    return iou, dist # [HW x KA]
 
 
 def label_creator(targets,
@@ -77,17 +80,22 @@ def label_creator(targets,
             gt_box = np.array([[x1s, y1s, x2s, y2s]])
 
             # compute IoU
-            iou = compute_iou(anchor_boxes, gt_box)
+            iou, dist = compute_iou_dist(anchor_boxes, gt_box)
 
             # keep the topk anchor boxes
-            iou_sorted = -np.sort(-iou)
-            iou_sorted_idx = np.argsort(-iou)
+            dist_sorted = np.sort(dist)
+            dist_sorted_idx = np.argsort(dist)
+
+            # iou_sorted = -np.sort(-iou)
+            # iou_sorted_idx = np.argsort(-iou)
 
             # make labels
             for k in range(topk):
-                iou_score = iou_sorted[k]
+                grid_idx = dist_sorted_idx[k]
+                iou_score = iou[grid_idx]
+                # iou_score = iou_sorted[k]
+                # grid_idx = iou_sorted_idx[k]
                 if iou_score > igt:
-                    grid_idx = iou_sorted_idx[k]
                     target_tensor[bi, grid_idx, :num_classes] = 0.0 # avoiding the multi labels for one grid cell
                     target_tensor[bi, grid_idx, cls_id] = 1.0
                     target_tensor[bi, grid_idx, num_classes:num_classes+4] = np.array([x1s, y1s, x2s, y2s])
