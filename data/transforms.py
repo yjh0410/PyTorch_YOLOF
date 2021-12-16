@@ -182,7 +182,7 @@ class TrainTransforms(object):
         self.transforms = Compose([
             ToTensor(),
             RandomHorizontalFlip(),
-            # RandomShift(max_shift=32),
+            RandomShift(max_shift=32),
             Resize(size, max_size=max_size, random_size=random_size),
             Normalize(mean, std),
             PadImage(max_size=max_size)
