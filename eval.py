@@ -7,7 +7,7 @@ from evaluator.voc_evaluator import VOCAPIEvaluator
 from evaluator.coco_evaluator import COCOAPIEvaluator
 
 from data.transforms import ValTransforms
-from config import yolof_config
+from config.yolof_config import yolof_config
 
 from utils.misc import TestTimeAugmentation
 
