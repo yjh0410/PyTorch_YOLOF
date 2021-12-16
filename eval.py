@@ -11,7 +11,7 @@ from config.yolof_config import yolof_config
 
 from utils.misc import TestTimeAugmentation
 
-from models.yolof import build_model
+from models.yolof import YOLOF
 
 
 def parse_args():
@@ -108,12 +108,13 @@ if __name__ == '__main__':
     cfg = yolof_config[args.version]
 
     # build model
-    model = build_model(args=args, 
-                        device=device, 
-                        num_classes=num_classes, 
-                        trainable=False, 
-                        anchor_size=cfg['anchor_size'], 
-                        post_process=True)
+    model = YOLOF(cfg=cfg,
+                  device=device,
+                  num_classes=num_classes,
+                  trainable=False,
+                  conf_thresh=args.conf_thresh,
+                  nms_thresh=args.nms_thresh,
+                  post_process=True)
 
     # load weight
     model.load_state_dict(torch.load(args.weight, map_location=device), strict=False)
