@@ -7,6 +7,6 @@ python train.py \
         --lr 0.01 \
         --lr_backbone 0.01 \
         --wp_iter 500 \
-        --optimizer sgd \
+        --optimizer adamw \
         --accumulate 1 \
         --no_warmup
