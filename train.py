@@ -6,6 +6,7 @@ import time
 import numpy as np
 
 import torch
+from torch.cuda import amp
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
@@ -209,6 +210,8 @@ def train():
                                 weight_decay=1e-4)
     # lr scheduler
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=cfg['lr_epoch'])
+    scaler = amp.GradScaler(enabled=args.cuda)
+
 
     # training configuration
     max_epoch = cfg['max_epoch']
@@ -246,19 +249,18 @@ def train():
             images = images.to(device)
             masks = masks.to(device)
 
-            # inference
-            outputs = model(images, mask=masks)
+            # Forward
+            with amp.autocast(enabled=args.cuda):
+                outputs = model(images, mask=masks)
 
-            # compute loss
-            cls_loss, reg_loss, total_loss = criterion(anchor_boxes=net.anchor_boxes,
-                                                       outputs=outputs,
-                                                       targets=targets,
-                                                       stride=net.stride,
-                                                       images=images,
-                                                       vis_labels=args.vis_targets)
-            
-            total_loss = total_loss / args.accumulate
-
+                # compute loss
+                cls_loss, reg_loss, total_loss = criterion(anchor_boxes=net.anchor_boxes,
+                                                        outputs=outputs,
+                                                        targets=targets,
+                                                        stride=net.stride,
+                                                        images=images,
+                                                        vis_labels=args.vis_targets)
+                
             loss_dict = dict(
                 cls_loss=cls_loss,
                 reg_loss=reg_loss,
@@ -266,14 +268,13 @@ def train():
             )
             loss_dict_reduced = distributed_utils.reduce_loss_dict(loss_dict)
 
-            # check loss
-            if torch.isnan(total_loss):
-                continue
+            # Backward
+            scaler.scale(total_loss).backward()
 
-            # Backward and Optimize
-            total_loss.backward()        
+            # Optimize
             if ni % args.accumulate == 0:
-                optimizer.step()
+                scaler.step(optimizer)  # optimizer.step
+                scaler.update()
                 optimizer.zero_grad()
 
             # display
