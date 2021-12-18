@@ -2,10 +2,11 @@ python train.py \
         --cuda \
         -d coco \
         -v yolof_r50_C5_1x \
+        --norm GN \
         --batch_size 16 \
         --img_size 800 \
-        --lr 0.01 \
-        --lr_backbone 0.01 \
+        --lr 0.04 \
+        --lr_backbone 0.04 \
         --wp_iter 500 \
-        --optimizer adamw \
-        --accumulate 1
+        --optimizer sgd \
+        --accumulate 4
