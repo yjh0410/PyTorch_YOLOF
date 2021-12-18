@@ -52,7 +52,11 @@ def parse_args():
     parser.add_argument('--tfboard', action='store_true', default=False,
                         help='use tensorboard')
     parser.add_argument('--save_folder', default='weights/', type=str, 
-                        help='Gamma update for SGD')
+                        help='path to save weight')
+
+    # optimizer
+    parser.add_argument('-opt', '--optimizer', default='sgd', type=str, 
+                        help='optimizer: sgd, adamw')
 
     # visualize
     parser.add_argument('--vis_data', action='store_true', default=False,
@@ -190,13 +194,20 @@ def train():
 
         tblogger = SummaryWriter(log_path)
     
-    # optimizer, lr scheduler
+    # optimizer
     tmp_lr = base_lr = args.lr
-    optimizer = optim.SGD(param_dicts, 
-                         lr=tmp_lr,
-                         momentum=0.9,
-                         weight_decay=1e-4)
-
+    if args.optimizer == 'sgd':
+        print('use SGD with momentum ...')
+        optimizer = optim.SGD(param_dicts, 
+                            lr=tmp_lr,
+                            momentum=0.9,
+                            weight_decay=1e-4)
+    elif args.optimizer == 'adamw':
+        print('use AdamW ...')
+        optimizer = optim.AdamW(param_dicts, 
+                                lr=tmp_lr,
+                                weight_decay=1e-4)
+    # lr scheduler
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=cfg['lr_epoch'])
 
     # training configuration
