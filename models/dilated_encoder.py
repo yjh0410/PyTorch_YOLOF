@@ -6,13 +6,13 @@ from utils import weight_init
 
 # Dilated Encoder
 class Bottleneck(nn.Module):
-    def __init__(self, c, d=1, e=0.5, act=True):
+    def __init__(self, c, d=1, e=0.5, norm='BN', act=True):
         super(Bottleneck, self).__init__()
         c_ = int(c * e)
         self.branch = nn.Sequential(
-            Conv(c, c_, k=1, act=act),
-            Conv(c_, c_, k=3, p=d, d=d, act=act),
-            Conv(c_, c, k=1, act=act)
+            Conv(c, c_, k=1, norm=norm, act=act),
+            Conv(c_, c_, k=3, norm=norm, p=d, d=d, act=act),
+            Conv(c_, c, k=1, norm=norm, act=act)
         )
 
     def forward(self, x):
@@ -21,15 +21,15 @@ class Bottleneck(nn.Module):
 
 class DilatedEncoder(nn.Module):
     """ DilateEncoder """
-    def __init__(self, c1, c2, e=0.5, act=True, dilation_list=[2, 4, 6, 8]):
+    def __init__(self, c1, c2, e=0.5, norm='BN', act=True, dilation_list=[2, 4, 6, 8]):
         super(DilatedEncoder, self).__init__()
         self.projector = nn.Sequential(
-            Conv(c1, c2, k=1, act=False),
-            Conv(c2, c2, k=3, p=1, act=False)
+            Conv(c1, c2, k=1, norm=norm, act=False),
+            Conv(c2, c2, k=3, p=1, norm=norm, act=False)
         )
         encoders = []
         for d in dilation_list:
-            encoders.append(Bottleneck(c=c2, d=d, e=e, act=act))
+            encoders.append(Bottleneck(c=c2, d=d, e=e, norm=norm, act=act))
         self.encoders = nn.Sequential(*encoders)
 
         self._init_weight()

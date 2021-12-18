@@ -38,6 +38,7 @@ class YOLOF(nn.Module):
         self.neck = DilatedEncoder(c1=feature_channels, 
                                    c2=cfg['head_dims'], 
                                    e=cfg['bottle_ratio'],
+                                   norm=norm,
                                    dilation_list=cfg['dilated_block'])
 
         # head
