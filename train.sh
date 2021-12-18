@@ -5,8 +5,8 @@ python train.py \
         --norm GN \
         --batch_size 16 \
         --img_size 800 \
-        --lr 0.04 \
-        --lr_backbone 0.04 \
+        --lr 0.01 \
+        --lr_backbone 0.01 \
         --wp_iter 500 \
         --optimizer sgd \
         --accumulate 4
