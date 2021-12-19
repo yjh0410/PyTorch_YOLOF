@@ -401,7 +401,7 @@ def build_dataloader(args, dataset, collate_fn=None):
         # dataloader
         dataloader = torch.utils.data.DataLoader(
                         dataset=dataset, 
-                        shuffle=False,
+                        shuffle=True,
                         batch_size=args.batch_size, 
                         collate_fn=collate_fn,
                         num_workers=args.num_workers,
