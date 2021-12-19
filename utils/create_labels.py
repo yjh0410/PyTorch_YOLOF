@@ -57,7 +57,6 @@ def label_creator(targets,
     # prepare
     batch_size = len(targets)
     N, KA = anchor_boxes.shape[1:3]
-    anchor_boxes = anchor_boxes
 
     # [B, HW x KA, cls+box+pos]
     target_tensor = np.zeros([batch_size, N*KA, num_classes + 4 + 1])
@@ -83,18 +82,12 @@ def label_creator(targets,
             iou, dist = compute_iou_dist(anchor_boxes, gt_box)
 
             # keep the topk anchor boxes
-            dist_sorted = np.sort(dist)
             dist_sorted_idx = np.argsort(dist)
-
-            # iou_sorted = -np.sort(-iou)
-            # iou_sorted_idx = np.argsort(-iou)
 
             # make labels
             for k in range(topk):
                 grid_idx = dist_sorted_idx[k]
                 iou_score = iou[grid_idx]
-                # iou_score = iou_sorted[k]
-                # grid_idx = iou_sorted_idx[k]
                 if iou_score > igt:
                     target_tensor[bi, grid_idx, :num_classes] = 0.0 # avoiding the multi labels for one grid cell
                     target_tensor[bi, grid_idx, cls_id] = 1.0
