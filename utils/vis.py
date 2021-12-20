@@ -103,7 +103,7 @@ def vis_targets(images, targets, anchor_boxes, stride=32):
 
         image_ = np.concatenate([image1, image2], axis=1)
         cv2.namedWindow("assignment", 0)
-        cv2.resizeWindow("assignment", image1.shape[1], image1.shape[0])
+        cv2.resizeWindow("assignment", image1.shape[1]*2, image1.shape[0])
         cv2.imshow('assignment', image_)
         cv2.waitKey(0)
 
