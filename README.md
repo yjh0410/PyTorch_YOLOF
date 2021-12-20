@@ -26,6 +26,16 @@ pip install -r requirements.txt
 ```
 PyTorch >= 1.1.0 and Torchvision >= 0.3.0
 
+# See positive sample
+You can run following command to visualize positiva sample:
+```Shell
+python train.py \
+        -d voc \
+        --batch_size 2 \
+        --root path/to/your/dataset \
+        --vis_targets
+```
+
 # My Ablation Studies
 
 ## image mask
