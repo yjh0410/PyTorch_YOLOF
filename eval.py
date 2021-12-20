@@ -17,7 +17,9 @@ from models.yolof import YOLOF
 def parse_args():
     parser = argparse.ArgumentParser(description='YOLOF Detection')
     # basic
-    parser.add_argument('-size', '--img_size', default=800, type=int,
+    parser.add_argument('--min_size', default=800, type=int,
+                        help='the min size of input image')
+    parser.add_argument('--max_size', default=1333, type=int,
                         help='the min size of input image')
     parser.add_argument('--cuda', action='store_true', default=False,
                         help='Use cuda')
@@ -43,17 +45,17 @@ def parse_args():
 
 
 
-def voc_test(model, data_dir, device, img_size):
+def voc_test(model, data_dir, device, transform):
     evaluator = VOCAPIEvaluator(data_root=data_dir,
                                 device=device,
-                                transform=ValTransforms(img_size),
+                                transform=transform,
                                 display=True)
 
     # VOC evaluation
     evaluator.evaluate(model)
 
 
-def coco_test(model, data_dir, device, img_size, test=False):
+def coco_test(model, data_dir, device, transform, test=False):
     if test:
         # test-dev
         print('test on test-dev 2017')
@@ -61,7 +63,7 @@ def coco_test(model, data_dir, device, img_size, test=False):
                         data_dir=data_dir,
                         device=device,
                         testset=True,
-                        transform=ValTransforms(img_size))
+                        transform=transform)
 
     else:
         # eval
@@ -69,7 +71,7 @@ def coco_test(model, data_dir, device, img_size, test=False):
                         data_dir=data_dir,
                         device=device,
                         testset=False,
-                        transform=ValTransforms(img_size))
+                        transform=transform)
 
     # COCO evaluation
     evaluator.evaluate(model)
@@ -123,12 +125,16 @@ if __name__ == '__main__':
 
     # TTA
     test_aug = TestTimeAugmentation(num_classes=num_classes) if args.test_aug else None
-    
+
+    # transform
+    transform = ValTransforms(min_size=args.min_size, 
+                              max_size=args.max_size)
+
     # evaluation
     with torch.no_grad():
         if args.dataset == 'voc':
-            voc_test(model, data_dir, device, args.img_size)
+            voc_test(model, data_dir, device, transform)
         elif args.dataset == 'coco-val':
-            coco_test(model, data_dir, device, args.img_size, test=False)
+            coco_test(model, data_dir, device, transform, test=False)
         elif args.dataset == 'coco-test':
-            coco_test(model, data_dir, device, args.img_size, test=True)
+            coco_test(model, data_dir, device, transform, test=True)

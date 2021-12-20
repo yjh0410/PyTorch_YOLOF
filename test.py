@@ -19,7 +19,9 @@ def parse_args():
     parser = argparse.ArgumentParser(description='YOLOF Detection')
 
     # basic
-    parser.add_argument('-size', '--img_size', default=800, type=int,
+    parser.add_argument('--min_size', default=800, type=int,
+                        help='the min size of input image')
+    parser.add_argument('--max_size', default=1333, type=int,
                         help='the min size of input image')
     parser.add_argument('--show', action='store_true', default=False,
                         help='show the visulization results.')
@@ -214,13 +216,16 @@ if __name__ == '__main__':
     # TTA
     test_aug = TestTimeAugmentation(num_classes=num_classes) if args.test_aug else None
 
+    # transform
+    transform = ValTransforms(min_size=args.min_size, 
+                              max_size=args.max_size)
 
     # run
     test(args=args,
         net=model, 
         device=device, 
         dataset=dataset,
-        transforms=ValTransforms(args.img_size),
+        transforms=transform,
         vis_thresh=args.visual_threshold,
         class_colors=class_colors,
         class_names=class_names,
