@@ -3,8 +3,6 @@ from __future__ import division
 import os
 import argparse
 import time
-from cv2 import transform
-import numpy as np
 
 import torch
 import torch.optim as optim
