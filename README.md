@@ -159,6 +159,33 @@ We ignore the negative samples whose IoU are higher the ignore threshold (igt).
 
 <table><tbody>
 
+## Decode boxes
+- Backbone: ResNet-50
+- image size: shorter size = 800, longer size <= 1333
+- Batch size: 16
+- lr: 0.01
+- lr of backbone: 0.01
+- SGD with momentum 0.9 and weight decay 1e-4
+- Matcher: L1 Top4
+- epoch: 12 (1x schedule)
+- lr decay: 8, 11
+- augmentation: RandomFlip + RandomShift
+- with image mask
+
+Method-1: ctr_x = x_anchor + t_x, ctr_y = y_anchor + t_y
+
+Method-2: ctr_x = x_anchor + t_x * w_anchor, ctr_y = y_anchor + t_y * h_anchor
+
+The Method-2 is following the operation used in YOLOF.
+
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8> Method </th><td bgcolor=white> AP   </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white>  APs  </td><td bgcolor=white>  APm  </td><td bgcolor=white>  APl  </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> Method-1 </th><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> Method-2 </th><td bgcolor=white>   </td><td bgcolor=white>   </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+
+<table><tbody>
 
 # Train
 ```Shell
