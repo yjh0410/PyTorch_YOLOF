@@ -125,26 +125,26 @@ class Normalize(object):
 
 # Resize tensor image
 class Resize(object):
-    def __init__(self, size=800, max_size=1333, random_size=False):
-        self.size = size
+    def __init__(self, min_size=800, max_size=1333, random_size=False):
+        self.min_size = min_size
         self.max_size = max_size
         self.random_size = random_size
 
     def __call__(self, image, target=None, mask=None):
         if self.random_size:
-            size = random.choice([640, 672, 704, 736, 768, 800])
+            min_size = random.choice([640, 672, 704, 736, 768, 800])
         else:
-            size = self.size
+            min_size = self.min_size
 
         # resize
         img_h0, img_w0 = image.shape[1:]
         min_original_size = float(min((img_w0, img_h0)))
         max_original_size = float(max((img_w0, img_h0)))
 
-        if max_original_size / min_original_size * size > self.max_size:
-            size = int(round(min_original_size / max_original_size * self.max_size))
+        if max_original_size / min_original_size * min_size > self.max_size:
+            min_size = int(round(min_original_size / max_original_size * self.max_size))
 
-        image = F.resize(image, size=size, max_size=self.max_size)
+        image = F.resize(image, size=min_size, max_size=self.max_size)
 
         if target is not None:
             img_h, img_w = image.shape[1:]
@@ -175,15 +175,15 @@ class PadImage(object):
 
 # TrainTransform
 class TrainTransforms(object):
-    def __init__(self, size=800, max_size=1333, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), random_size=False):
-        self.size = size
+    def __init__(self, min_size=800, max_size=1333, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), random_size=False):
+        self.min_size = min_size
         self.mean = mean
         self.std = std
         self.transforms = Compose([
             ToTensor(),
             RandomHorizontalFlip(),
             RandomShift(max_shift=32),
-            Resize(size, max_size=max_size, random_size=random_size),
+            Resize(min_size=min_size, max_size=max_size, random_size=random_size),
             Normalize(mean, std),
             PadImage(max_size=max_size)
         ])
@@ -194,13 +194,14 @@ class TrainTransforms(object):
 
 # ValTransform
 class ValTransforms(object):
-    def __init__(self, size=800, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
-        self.size = size
+    def __init__(self, min_size=800, max_size=1333, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+        self.min_size = min_size
+        self.max_size = max_size
         self.mean = mean
         self.std = std
         self.transforms = Compose([
             ToTensor(),
-            Resize(size),
+            Resize(min_size=min_size, max_size=max_size),
             Normalize(mean, std)
         ])
 

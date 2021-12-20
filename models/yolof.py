@@ -115,6 +115,10 @@ class YOLOF(nn.Module):
             anchor_boxes: (List[tensor]) [1, HW, KA, 4]
             pred_reg: (List[tensor]) [B, HW, KA, 4]
         """
+        # x = x_anchor + dx * w_anchor
+        # y = y_anchor + dy * h_anchor
+        # pred_ctr_xy = anchor_boxes[..., :2] + pred_reg[..., :2] * anchor_boxes[..., 2:]
+
         # x = x_anchor + dx
         # y = y_anchor + dy
         pred_ctr_xy = anchor_boxes[..., :2] + pred_reg[..., :2]

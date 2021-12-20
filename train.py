@@ -3,6 +3,7 @@ from __future__ import division
 import os
 import argparse
 import time
+from cv2 import transform
 import numpy as np
 
 import torch
@@ -35,8 +36,6 @@ def parse_args():
                         help='use cuda.')
     parser.add_argument('--batch_size', default=16, type=int, 
                         help='Batch size for training')
-    parser.add_argument('--img_size', type=int, default=800,
-                        help='The shorter size of the input image')
     parser.add_argument('--lr', type=float, default=0.01,
                         help='Learning rate')
     parser.add_argument('--lr_backbone', type=float, default=0.01,
@@ -53,6 +52,16 @@ def parse_args():
                         help='use tensorboard')
     parser.add_argument('--save_folder', default='weights/', type=str, 
                         help='path to save weight')
+
+    # input image size               
+    parser.add_argument('--train_min_size', type=int, default=800,
+                        help='The shorter train size of the input image')
+    parser.add_argument('--train_max_size', type=int, default=1333,
+                        help='The longer train size of the input image')
+    parser.add_argument('--val_min_size', type=int, default=800,
+                        help='The shorter val size of the input image')
+    parser.add_argument('--val_max_size', type=int, default=1333,
+                        help='The longer val size of the input image')
 
     # optimizer
     parser.add_argument('-opt', '--optimizer', default='sgd', type=str, 
@@ -163,7 +172,10 @@ def train():
     if local_rank == 0:
         model.post_process = True
         model.eval()
-        FLOPs_and_Params(model=model, size=args.img_size, device=device)
+        FLOPs_and_Params(model=model, 
+                         min_size=args.val_min_size, 
+                         max_size=args.val_max_size, 
+                         device=device)
         model.post_process = False
         model.train()
 
@@ -352,30 +364,34 @@ def build_dataset(args, device):
     if args.dataset == 'voc':
         data_dir = os.path.join(args.root, 'VOCdevkit')
         num_classes = 20
-        max_size = int(round(1333 / 800 * args.img_size))
-        dataset = VOCDetection(
-                        data_dir=data_dir,
-                        transform=TrainTransforms(args.img_size, max_size=max_size))
-
-        evaluator = VOCAPIEvaluator(
-                        data_dir=data_dir,
-                        device=device,
-                        transform=ValTransforms(args.img_size))
+        # transform
+        train_transform = TrainTransforms(min_size=args.train_min_size, 
+                                          max_size=args.train_max_size)
+        val_transform = ValTransforms(min_size=args.val_min_size, 
+                                      max_size=args.val_max_size)
+        # dataset
+        dataset = VOCDetection(data_dir=data_dir, transform=train_transform)
+        # evaluator
+        evaluator = VOCAPIEvaluator(data_dir=data_dir,
+                                    device=device,
+                                    transform=val_transform)
 
     elif args.dataset == 'coco':
         data_dir = os.path.join(args.root, 'COCO')
         num_classes = 80
-        max_size = int(round(1333 / 800 * args.img_size))
-        dataset = COCODataset(
-                    data_dir=data_dir,
-                    image_set='train2017',
-                    transform=TrainTransforms(args.img_size, max_size=max_size))
-
-        evaluator = COCOAPIEvaluator(
-                        data_dir=data_dir,
-                        device=device,
-                        transform=ValTransforms(args.img_size)
-                        )
+        # transform
+        train_transform = TrainTransforms(min_size=args.train_min_size, 
+                                          max_size=args.train_max_size)
+        val_transform = ValTransforms(min_size=args.val_min_size, 
+                                      max_size=args.val_max_size)
+        # dataset
+        dataset = COCODataset(data_dir=data_dir,
+                              image_set='train2017',
+                              transform=train_transform)
+        # evaluator
+        evaluator = COCOAPIEvaluator(data_dir=data_dir,
+                                     device=device,
+                                     transform=val_transform)
     
     else:
         print('unknow dataset !! Only support voc and coco !!')

@@ -47,12 +47,16 @@ def label_creator(targets,
                   num_classes, 
                   stride=32,
                   topk=8,
-                  igt=0.15):
+                  iou_t=0.15,
+                  igt=None):
     """
         targets: (list of tensors) annotations
         anchor_boxes: (tensor) [1, HW, KA, 4]
         num_classes: (int) the number of class
         stride: (int) output stride of network
+        topk: (int) the topk assignment result
+        iou_t: (float) positive sample threshold
+        igt: (float) ignore sample threshold
     """
     # prepare
     batch_size = len(targets)
@@ -85,14 +89,26 @@ def label_creator(targets,
             dist_sorted_idx = np.argsort(dist)
 
             # make labels
+            positive_sample_indx = []
             for k in range(topk):
                 grid_idx = dist_sorted_idx[k]
                 iou_score = iou[grid_idx]
-                if iou_score > igt:
+                if iou_score > iou_t:
                     target_tensor[bi, grid_idx, :num_classes] = 0.0 # avoiding the multi labels for one grid cell
                     target_tensor[bi, grid_idx, cls_id] = 1.0
                     target_tensor[bi, grid_idx, num_classes:num_classes+4] = np.array([x1s, y1s, x2s, y2s])
                     target_tensor[bi, grid_idx, -1] = 1.0
+                    positive_sample_indx.append(grid_idx)
+            
+            # ignore samples
+            if igt is not None:
+                iou_p_indx = np.where(iou > igt)[0].tolist()
+                if len(iou_p_indx) > 0:
+                    for k in iou_p_indx:
+                        if k in positive_sample_indx:
+                            continue
+                        else:
+                            target_tensor[bi, k, -1] = -1.0 # ignore sample
 
     # [B, HW, KA, cls+box+pos]
     target_tensor = target_tensor.reshape(batch_size, N, KA,  num_classes + 4 + 1)

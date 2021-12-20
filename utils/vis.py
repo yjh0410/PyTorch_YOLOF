@@ -65,7 +65,8 @@ def vis_targets(images, targets, anchor_boxes, stride=32):
         image = ((image * rgb_std + rgb_mean)*255).astype(np.uint8)
         # to BGR
         image = image[..., (2, 1, 0)]
-        image = image.copy()
+        image1 = image.copy()
+        image2 = image.copy()
 
         target_i = targets[bi] # [HW, KA, C+4+1]
         for j in range(target_i.shape[0]):
@@ -79,18 +80,31 @@ def vis_targets(images, targets, anchor_boxes, stride=32):
                     y1 = int(y1s * stride)
                     x2 = int(x2s * stride)
                     y2 = int(y2s * stride)
-                    cv2.rectangle(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                    cv2.rectangle(image1, (x1, y1), (x2, y2), (0, 0, 255), 3)
+                    cv2.rectangle(image2, (x1, y1), (x2, y2), (0, 0, 255), 3)
 
-                    # anchor box
+                    # positive anchor box
                     ab_box = anchor_boxes[j, k]
                     xcs, ycs, ws, hs = ab_box
                     x1 = int((xcs - ws / 2.0) * stride)
                     y1 = int((ycs - hs / 2.0) * stride)
                     x2 = int((xcs + ws / 2.0) * stride)
                     y2 = int((ycs + hs / 2.0) * stride)
-                    cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                    cv2.rectangle(image1, (x1, y1), (x2, y2), (255, 0, 0), 3)
+                elif t[-1].item() == -1.0: # ignore sample
+                    # ignore anchor box
+                    ab_box = anchor_boxes[j, k]
+                    xcs, ycs, ws, hs = ab_box
+                    x1 = int((xcs - ws / 2.0) * stride)
+                    y1 = int((ycs - hs / 2.0) * stride)
+                    x2 = int((xcs + ws / 2.0) * stride)
+                    y2 = int((ycs + hs / 2.0) * stride)
+                    cv2.rectangle(image2, (x1, y1), (x2, y2), (0, 255, 0), 3)
 
-        cv2.imshow('groundtruth', image)
+        image_ = np.concatenate([image1, image2], axis=1)
+        cv2.namedWindow("assignment", 0)
+        cv2.resizeWindow("assignment", image1.shape[1], image1.shape[0])
+        cv2.imshow('assignment', image_)
         cv2.waitKey(0)
 
 

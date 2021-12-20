@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from .box_ops import giou_score
 from .create_labels import label_creator
-from utils.vis import vis_anchor_boxes, vis_targets
+from utils.vis import vis_targets
 
 
 class FocalWithLogitsLoss(nn.Module):
@@ -13,7 +13,7 @@ class FocalWithLogitsLoss(nn.Module):
         self.gamma = gamma
         self.alpha = alpha
 
-    def forward(self, logits, targets, mask=None):
+    def forward(self, logits, targets, targets_valid, mask=None):
         p = torch.sigmoid(logits)
         ce_loss = F.binary_cross_entropy_with_logits(input=logits, 
                                                      target=targets, 
@@ -21,6 +21,9 @@ class FocalWithLogitsLoss(nn.Module):
                                                      )
         p_t = p * targets + (1.0 - p) * (1.0 - targets)
         loss = ce_loss * ((1.0 - p_t) ** self.gamma)
+        # valid loss. Here we ignore the loss of ignore samples
+        loss = loss * targets_valid[..., None]
+        # valid loss. Here we ignore the loss of samples who are not in the image if mask is not None.
         loss = loss if mask is None else loss * mask[..., None, None]
 
         if self.alpha >= 0:
@@ -57,9 +60,10 @@ class Criterion(nn.Module):
     def loss_labels(self, pred_cls, target, mask=None):
         # groundtruth    
         target_labels = target[..., :self.num_classes].float() # [B, HW, KA, C]
+        target_valid = (target[..., -1] > -1.0).float()        # [B, HW, KA,]
 
         # cls loss
-        loss_cls = self.cls_loss_f(pred_cls, target_labels, mask)
+        loss_cls = self.cls_loss_f(pred_cls, target_labels, target_valid, mask)
 
         return loss_cls
 
@@ -67,7 +71,7 @@ class Criterion(nn.Module):
     def loss_bboxes(self, pred_box, target, mask=None):
         # groundtruth    
         target_bboxes = target[..., self.num_classes:self.num_classes+4] # [B, HW, KA, 4]
-        target_pos = target[..., -1].float()                             # [B, HW, KA,]
+        target_pos = (target[..., -1] > 0.).float()                      # [B, HW, KA,]
         num_pos = target_pos.sum([1, 2]).clamp(1.0)                      # [B,]
 
         # reg loss
@@ -105,6 +109,7 @@ class Criterion(nn.Module):
                                 anchor_boxes=anchor_boxes, 
                                 num_classes=self.num_classes,
                                 topk=self.cfg['topk'],
+                                iou_t=self.cfg['iou_thresh'],
                                 igt=self.cfg['ignore_thresh'])
         # [B, HW, KA, C+4+1]
         targets = targets.to(self.device)

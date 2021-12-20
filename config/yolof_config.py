@@ -18,7 +18,8 @@ yolof_config = {
         'lr_epoch': [8, 11],
         # matcher
         'topk': 4,
-        'ignore_thresh': 0.15
+        'iou_thresh': 0.15,
+        'ignore_thresh': 0.7
     },
     'yolof_r101_C5_1x': {
         # model
@@ -32,7 +33,8 @@ yolof_config = {
         'lr_epoch': [8, 11],
         # matcher
         'topk': 4,
-        'ignore_thresh': 0.15
+        'iou_thresh': 0.15,
+        'ignore_thresh': 0.7
     },
     'yolof_r50_DC5_1x': {
         # model
@@ -46,7 +48,8 @@ yolof_config = {
         'lr_epoch': [8, 11],
         # matcher
         'topk': 4,
-        'ignore_thresh': 0.15
+        'iou_thresh': 0.15,
+        'ignore_thresh': 0.7
     },
     'yolof_r101_DC5_1x': {
         # model
@@ -60,6 +63,7 @@ yolof_config = {
         'lr_epoch': [8, 11],
         # matcher
         'topk': 4,
-        'ignore_thresh': 0.15
+        'iou_thresh': 0.15,
+        'ignore_thresh': 0.7
     }
 }
