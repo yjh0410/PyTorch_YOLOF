@@ -26,7 +26,7 @@ pip install -r requirements.txt
 ```
 PyTorch >= 1.1.0 and Torchvision >= 0.3.0
 
-# See positive sample
+# Visualize positive sample
 You can run following command to visualize positiva sample:
 ```Shell
 python train.py \
