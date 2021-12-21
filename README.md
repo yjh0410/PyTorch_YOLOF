@@ -131,7 +131,7 @@ I fixed a bug in dataloader. Specifically, I set the `shuffle` in dataloader as 
 
 <tr><th align="left" bgcolor=#f8f8f8> bug  </th><td bgcolor=white> 29.0 </td><td bgcolor=white> 47.3 </td><td bgcolor=white> 29.8 </td><td bgcolor=white> 14.2 </td><td bgcolor=white> 34.2 </td><td bgcolor=white> 38.9 </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> no bug </th><td bgcolor=white>   </td><td bgcolor=white>   </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> no bug </th><td bgcolor=white> 30.1 </td><td bgcolor=white> 49.0 </td><td bgcolor=white> 31.0 </td><td bgcolor=white> 15.2 </td><td bgcolor=white> 36.3 </td><td bgcolor=white> 39.8 </td></tr>
 
 <table><tbody>
 
@@ -148,12 +148,12 @@ I fixed a bug in dataloader. Specifically, I set the `shuffle` in dataloader as 
 - augmentation: RandomFlip + RandomShift
 - with image mask
 
-We ignore the negative samples whose IoU are higher the ignore threshold (igt).
+We ignore those negative samples whose IoU with labels are higher the ignore threshold (igt).
 
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> Method </th><td bgcolor=white> AP   </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white>  APs  </td><td bgcolor=white>  APm  </td><td bgcolor=white>  APl  </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> no igt </th><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> no igt </th><td bgcolor=white>30.1 </td><td bgcolor=white> 49.0 </td><td bgcolor=white> 31.0 </td><td bgcolor=white> 15.2 </td><td bgcolor=white> 36.3 </td><td bgcolor=white> 39.8 </td></tr>
 
 <tr><th align="left" bgcolor=#f8f8f8> igt=0.7 </th><td bgcolor=white>   </td><td bgcolor=white>   </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
 
