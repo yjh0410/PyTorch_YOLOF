@@ -153,9 +153,9 @@ We ignore those negative samples whose IoU with labels are higher the ignore thr
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> Method </th><td bgcolor=white> AP   </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white>  APs  </td><td bgcolor=white>  APm  </td><td bgcolor=white>  APl  </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> no igt </th><td bgcolor=white>30.1 </td><td bgcolor=white> 49.0 </td><td bgcolor=white> 31.0 </td><td bgcolor=white> 15.2 </td><td bgcolor=white> 36.3 </td><td bgcolor=white> 39.8 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> no igt </th><td bgcolor=white> 30.1 </td><td bgcolor=white> 49.0 </td><td bgcolor=white> 31.0 </td><td bgcolor=white> 15.2 </td><td bgcolor=white> 36.3 </td><td bgcolor=white> 39.8 </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> igt=0.7 </th><td bgcolor=white>   </td><td bgcolor=white>   </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> igt=0.7 </th><td bgcolor=white> 30.2 </td><td bgcolor=white> 49.3 </td><td bgcolor=white> 30.8 </td><td bgcolor=white> 15.5 </td><td bgcolor=white> 35.7 </td><td bgcolor=white> 41.2 </td></tr>
 
 <table><tbody>
 
