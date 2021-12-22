@@ -181,7 +181,7 @@ The Method-2 is following the operation used in YOLOF.
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> Method </th><td bgcolor=white> AP   </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white>  APs  </td><td bgcolor=white>  APm  </td><td bgcolor=white>  APl  </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> Method-1 </th><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> Method-1 </th><td bgcolor=white> 30.2 </td><td bgcolor=white> 49.3 </td><td bgcolor=white> 30.8 </td><td bgcolor=white> 15.5 </td><td bgcolor=white> 35.7 </td><td bgcolor=white> 41.2 </td></tr>
 
 <tr><th align="left" bgcolor=#f8f8f8> Method-2 </th><td bgcolor=white>   </td><td bgcolor=white>   </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
 
@@ -203,11 +203,11 @@ According to your own situation, you can make necessary adjustments to the above
 
 ## Test
 ```Shell
-python test.py -d [select a dataset: voc or coco] \
+python test.py -d coco \
                --cuda \
-               -v [select a model] \
-               --weight [ Please input the path to model dir. ] \
-               --img_size 800 \
+               --weight path/to/weight \
+               --min_size 800 \
+               --max_size 1333 \
                --root path/to/dataset/ \
                --show
 ```
