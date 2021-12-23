@@ -32,16 +32,15 @@ class FocalWithLogitsLoss(nn.Module):
 
         if self.reduction == "mean":
             pos_inds = (targets == 1.0).float()
-            # # [B, HW, KA, C] -> [B,]
+            # scale loss by number of positive samples of each sample and batch size
+            # [B, HW, KA, C] -> [B,]
+            # batch_size = logits.size(0)
             # num_pos = pos_inds.sum([1, 2, 3]).clamp(1.0)
-
-            # # [B, HW, KA, C] -> [B,]
             # loss = loss.sum([1, 2, 3]) / num_pos
-            # loss = loss.sum()
+            # loss = loss.sum() / batch_size
 
-            # number of positive sample
-            num_pos = pos_inds.sum()
             # scale loss by number of total positive samples
+            num_pos = pos_inds.sum()
             loss = loss.sum() / num_pos
 
         elif self.reduction == "sum":
@@ -93,9 +92,11 @@ class Criterion(nn.Module):
         # valid loss. Here we only compute the loss of positive samples.
         loss_reg = loss_reg * target_pos
 
+        # scale loss by number of positive samples of each sample and batch size
         # [B, HW, KA] -> [B,]
-        # loss_reg = (loss_reg * target_pos).sum([1, 2]) / num_pos
-        # loss_reg = loss_reg.sum()
+        # batch_size = pred_box.size(0)
+        # loss_reg = loss_reg.sum([1, 2]) / num_pos
+        # loss_reg = loss_reg.sum() / batch_size
 
         # scale loss by number of total positive samples
         num_pos = target_pos.sum()
@@ -114,7 +115,6 @@ class Criterion(nn.Module):
             images: (tensor) [B, 3, H, W]
             vis_labels: (bool) visualize labels to check positive samples
         """
-        batch_size = outputs["pred_cls"].size(0)
         # make labels
         targets = label_creator(targets=targets, 
                                 stride=stride,
@@ -132,11 +132,9 @@ class Criterion(nn.Module):
 
         # compute class loss
         loss_labels = self.loss_labels(outputs["pred_cls"], targets, outputs["mask"])
-        # loss_labels /= batch_size
 
         # compute bboxes loss
         loss_bboxes = self.loss_bboxes(outputs["pred_box"], targets, outputs["mask"])
-        # loss_bboxes /= batch_size
 
         # total loss
         losses = self.loss_cls_weight * loss_labels + self.loss_reg_weight * loss_bboxes
