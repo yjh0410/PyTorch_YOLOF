@@ -90,6 +90,7 @@ class Criterion(nn.Module):
         # [B x HW x KA,] -> [B, HW, KA,]
         pred_giou = pred_giou.view(B, HW, KA)
         loss_reg = 1. - pred_giou if mask is None else (1. - pred_giou) * mask[..., None]
+        # valid loss. Here we only compute the loss of positive samples.
         loss_reg = loss_reg * target_pos
 
         # [B, HW, KA] -> [B,]
