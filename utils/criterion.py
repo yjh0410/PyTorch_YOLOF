@@ -32,12 +32,17 @@ class FocalWithLogitsLoss(nn.Module):
 
         if self.reduction == "mean":
             pos_inds = (targets == 1.0).float()
-            # [B, HW, KA, C] -> [B,]
-            num_pos = pos_inds.sum([1, 2, 3]).clamp(1.0)
+            # # [B, HW, KA, C] -> [B,]
+            # num_pos = pos_inds.sum([1, 2, 3]).clamp(1.0)
 
-            # [B, HW, KA, C] -> [B,]
-            loss = loss.sum([1, 2, 3]) / num_pos
-            loss = loss.sum()
+            # # [B, HW, KA, C] -> [B,]
+            # loss = loss.sum([1, 2, 3]) / num_pos
+            # loss = loss.sum()
+
+            # number of positive sample
+            num_pos = pos_inds.sum()
+            # scale loss by number of total positive samples
+            loss = loss.sum() / num_pos
 
         elif self.reduction == "sum":
             loss = loss.sum()
@@ -85,9 +90,15 @@ class Criterion(nn.Module):
         # [B x HW x KA,] -> [B, HW, KA,]
         pred_giou = pred_giou.view(B, HW, KA)
         loss_reg = 1. - pred_giou if mask is None else (1. - pred_giou) * mask[..., None]
+        loss_reg = loss_reg * target_pos
 
-        loss_reg = (loss_reg * target_pos).sum([1, 2]) / num_pos
-        loss_reg = loss_reg.sum()
+        # [B, HW, KA] -> [B,]
+        # loss_reg = (loss_reg * target_pos).sum([1, 2]) / num_pos
+        # loss_reg = loss_reg.sum()
+
+        # scale loss by number of total positive samples
+        num_pos = target_pos.sum()
+        loss_reg = loss_reg.sum() / num_pos
         
         return loss_reg
 
