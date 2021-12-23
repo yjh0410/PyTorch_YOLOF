@@ -38,7 +38,7 @@ python train.py \
 
 # My Ablation Studies
 
-## image mask
+## Image mask
 - Backbone: ResNet-50
 - image size: shorter size = 800, longer size <= 1333
 - Batch size: 16
@@ -172,9 +172,17 @@ We ignore those negative samples whose IoU with labels are higher the ignore thr
 - augmentation: RandomFlip + RandomShift
 - with image mask
 
-Method-1: ctr_x = x_anchor + t_x, ctr_y = y_anchor + t_y
+Method-1: 
+```Shell
+x_c = x_anchor + t_x
+y_c = y_anchor + t_y
+```
 
-Method-2: ctr_x = x_anchor + t_x * w_anchor, ctr_y = y_anchor + t_y * h_anchor
+Method-2: 
+```Shell
+x_c = x_anchor + t_x * w_anchor
+y_c = y_anchor + t_y * h_anchor
+```
 
 The Method-2 is following the operation used in YOLOF.
 
@@ -183,9 +191,54 @@ The Method-2 is following the operation used in YOLOF.
 
 <tr><th align="left" bgcolor=#f8f8f8> Method-1 </th><td bgcolor=white> 30.2 </td><td bgcolor=white> 49.3 </td><td bgcolor=white> 30.8 </td><td bgcolor=white> 15.5 </td><td bgcolor=white> 35.7 </td><td bgcolor=white> 41.2 </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> Method-2 </th><td bgcolor=white>   </td><td bgcolor=white>   </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> Method-2 </th><td bgcolor=white> 30.1 </td><td bgcolor=white> 49.1 </td><td bgcolor=white> 30.9 </td><td bgcolor=white> 15.7 </td><td bgcolor=white> 35.4 </td><td bgcolor=white> 41.6 </td></tr>
 
 <table><tbody>
+
+## Scale loss by the number of total positive samples
+- Backbone: ResNet-50
+- image size: shorter size = 800, longer size <= 1333
+- Batch size: 16
+- lr: 0.01
+- lr of backbone: 0.01
+- SGD with momentum 0.9 and weight decay 1e-4
+- Matcher: L1 Top4
+- epoch: 12 (1x schedule)
+- lr decay: 8, 11
+- augmentation: RandomFlip + RandomShift
+- with image mask
+- Decode box: Method-2
+
+Method-1:
+
+In previous ablation studies, first we scale loss by the number of positive samples of each image, then we 
+calculate the sum of total loss of the batch and scale the final loss by the batch size.
+```Shell
+# loss: (Tensor) [B, N,]
+# num_pos: (Tensor) [B, N]
+loss = loss.sum(-1) / num_pos.sum(-1)  # [B,]
+loss = loss.sum() / batch_size
+```
+
+Method-2:
+
+Now, we scale loss by the total positive samples of the batch.
+```Shell
+# loss: (Tensor) [B, N,]
+# num_pos: (Tensor) [B, N]
+loss = loss.sum() / num_pos.sum()
+```
+
+
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8> Scale loss </th><td bgcolor=white> AP   </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white>  APs  </td><td bgcolor=white>  APm  </td><td bgcolor=white>  APl  </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> Method-1 </th><td bgcolor=white> 30.1 </td><td bgcolor=white> 49.1 </td><td bgcolor=white> 30.9 </td><td bgcolor=white> 15.7 </td><td bgcolor=white> 35.4 </td><td bgcolor=white> 41.6 </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> Method-2 </th><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+
+<table><tbody>
+
 
 # Train
 ```Shell
