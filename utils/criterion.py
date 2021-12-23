@@ -132,11 +132,11 @@ class Criterion(nn.Module):
 
         # compute class loss
         loss_labels = self.loss_labels(outputs["pred_cls"], targets, outputs["mask"])
-        loss_labels /= batch_size
+        # loss_labels /= batch_size
 
         # compute bboxes loss
         loss_bboxes = self.loss_bboxes(outputs["pred_box"], targets, outputs["mask"])
-        loss_bboxes /= batch_size
+        # loss_bboxes /= batch_size
 
         # total loss
         losses = self.loss_cls_weight * loss_labels + self.loss_reg_weight * loss_bboxes
