@@ -54,9 +54,9 @@ class YOLOF(nn.Module):
         )
 
         # head
-        self.obj_pred = nn.Conv2d(cfg['head_dims'], self.num_anchors * 1, kernel_size=1)
-        self.cls_pred = nn.Conv2d(cfg['head_dims'], self.num_anchors * self.num_classes, kernel_size=1)
-        self.reg_pred = nn.Conv2d(cfg['head_dims'], self.num_anchors * 4, kernel_size=1)
+        self.obj_pred = nn.Conv2d(cfg['head_dims'], self.num_anchors * 1, kernel_size=3, padding=1)
+        self.cls_pred = nn.Conv2d(cfg['head_dims'], self.num_anchors * self.num_classes, kernel_size=3, padding=1)
+        self.reg_pred = nn.Conv2d(cfg['head_dims'], self.num_anchors * 4, kernel_size=3, padding=1)
 
         if self.trainable:
             # init bias

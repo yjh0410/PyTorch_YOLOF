@@ -229,13 +229,42 @@ Now, we scale loss by the total positive samples of the batch.
 loss = loss.sum() / num_pos.sum()
 ```
 
-
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> Scale loss </th><td bgcolor=white> AP   </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white>  APs  </td><td bgcolor=white>  APm  </td><td bgcolor=white>  APl  </td></tr>
 
 <tr><th align="left" bgcolor=#f8f8f8> Method-1 </th><td bgcolor=white> 30.1 </td><td bgcolor=white> 49.1 </td><td bgcolor=white> 30.9 </td><td bgcolor=white> 15.7 </td><td bgcolor=white> 35.4 </td><td bgcolor=white> 41.6 </td></tr>
 
 <tr><th align="left" bgcolor=#f8f8f8> Method-2 </th><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+
+<table><tbody>
+
+## Prediction with 3 × 3 kernel size
+- Backbone: ResNet-50
+- image size: shorter size = 800, longer size <= 1333
+- Batch size: 16
+- lr: 0.01
+- lr of backbone: 0.01
+- SGD with momentum 0.9 and weight decay 1e-4
+- Matcher: L1 Top4
+- epoch: 12 (1x schedule)
+- lr decay: 8, 11
+- augmentation: RandomFlip + RandomShift
+- with image mask
+- Decode box: Method-2
+- Scale loss: by number of total positive samples
+
+In my previous YOLOF, I habitually set the kernel size in objectness, classification and regression to 1 × 1, just
+as many detectors do like RetinaNet and YOLO.
+
+After being reminded by others, I took a closer look at the source code of YOLOF again, and I found the kernel size
+are all 3 × 3, not 1 × 1. Therefore, I reset the kernel size to 3 × 3.
+
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8> Kernel size </th><td bgcolor=white> AP   </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white>  APs  </td><td bgcolor=white>  APm  </td><td bgcolor=white>  APl  </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> 1 × 1 </th><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> 3 × 3 </th><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
 
 <table><tbody>
 
