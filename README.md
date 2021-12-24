@@ -234,7 +234,7 @@ loss = loss.sum() / num_pos.sum()
 
 <tr><th align="left" bgcolor=#f8f8f8> Method-1 </th><td bgcolor=white> 30.1 </td><td bgcolor=white> 49.1 </td><td bgcolor=white> 30.9 </td><td bgcolor=white> 15.7 </td><td bgcolor=white> 35.4 </td><td bgcolor=white> 41.6 </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> Method-2 </th><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> Method-2 </th><td bgcolor=white> 31.4 </td><td bgcolor=white> 51.0 </td><td bgcolor=white> 32.4 </td><td bgcolor=white> 17.8 </td><td bgcolor=white> 37.8 </td><td bgcolor=white> 41.3 </td></tr>
 
 <table><tbody>
 
@@ -262,7 +262,7 @@ are all 3 × 3, not 1 × 1. Therefore, I reset the kernel size to 3 × 3.
 <table><tbody>
 <tr><th align="left" bgcolor=#f8f8f8> Kernel size </th><td bgcolor=white> AP   </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white>  APs  </td><td bgcolor=white>  APm  </td><td bgcolor=white>  APl  </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> 1 × 1 </th><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> 1 × 1 </th><td bgcolor=white> 31.4 </td><td bgcolor=white> 51.0 </td><td bgcolor=white> 32.4 </td><td bgcolor=white> 17.8 </td><td bgcolor=white> 37.8 </td><td bgcolor=white> 41.3 </td></tr>
 
 <tr><th align="left" bgcolor=#f8f8f8> 3 × 3 </th><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
 
