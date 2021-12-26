@@ -264,10 +264,37 @@ are all 3 × 3, not 1 × 1. Therefore, I reset the kernel size to 3 × 3.
 
 <tr><th align="left" bgcolor=#f8f8f8> 1 × 1 </th><td bgcolor=white> 31.4 </td><td bgcolor=white> 51.0 </td><td bgcolor=white> 32.4 </td><td bgcolor=white> 17.8 </td><td bgcolor=white> 37.8 </td><td bgcolor=white> 41.3 </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> 3 × 3 </th><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> 3 × 3 </th><td bgcolor=white> 31.2 </td><td bgcolor=white> 50.8 </td><td bgcolor=white> 32.1 </td><td bgcolor=white> 17.3 </td><td bgcolor=white> 37.6 </td><td bgcolor=white> 40.9 </td></tr>
 
 <table><tbody>
 
+## Prediction with 3 × 3 kernel size
+- Backbone: ResNet-50
+- image size: shorter size = 800, longer size <= 1333
+- Batch size: 16
+- lr: 0.03
+- lr of backbone: 0.01
+- SGD with momentum 0.9 and weight decay 1e-4
+- Matcher: L1 Top4
+- epoch: 12 (1x schedule)
+- lr decay: 8, 11
+- augmentation: RandomFlip + RandomShift
+- with image mask
+- Decode box: Method-2
+- Scale loss: by number of total positive samples
+
+YOLOF uses large learning rate 0.12 (the learning rate of backbone is one-third of 0.12, that is, 0.04) with 
+the 64 batch size. My YOLOF uses the 16 batch size since I have no many GPUs. Therefore, I should set the learning
+rate as 0.03 (the learning rate of backbone is 0.01).
+
+<table><tbody>
+<tr><th align="left" bgcolor=#f8f8f8> Lr </th><td bgcolor=white> AP   </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white>  APs  </td><td bgcolor=white>  APm  </td><td bgcolor=white>  APl  </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> 0.01 </th><td bgcolor=white> 31.4 </td><td bgcolor=white> 51.0 </td><td bgcolor=white> 32.4 </td><td bgcolor=white> 17.8 </td><td bgcolor=white> 37.8 </td><td bgcolor=white> 41.3 </td></tr>
+
+<tr><th align="left" bgcolor=#f8f8f8> 0.03 </th><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+
+<table><tbody>
 
 # Train
 ```Shell

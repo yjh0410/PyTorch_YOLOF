@@ -205,7 +205,8 @@ def train():
         tblogger = SummaryWriter(log_path)
     
     # optimizer
-    tmp_lr = base_lr = args.lr
+    base_lr = args.lr
+    tmp_lr = args.lr
     if args.optimizer == 'sgd':
         print('use SGD with momentum ...')
         optimizer = optim.SGD(param_dicts, 
@@ -240,13 +241,13 @@ def train():
             if ni < args.wp_iter and warmup:
                 nw = args.wp_iter
                 tmp_lr = base_lr * pow(ni / nw, 4)
-                set_lr(optimizer, tmp_lr)
+                set_lr(optimizer, tmp_lr, base_lr)
 
             elif ni == args.wp_iter and warmup:
                 # warmup is over
                 warmup = False
                 tmp_lr = base_lr
-                set_lr(optimizer, tmp_lr)
+                set_lr(optimizer, tmp_lr, base_lr)
 
             # visualize input data
             if args.vis_data:
@@ -423,9 +424,11 @@ def build_dataloader(args, dataset, collate_fn=None):
     return dataloader
 
 
-def set_lr(optimizer, lr):
+def set_lr(optimizer, lr, base_lr):
     for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
+        init_lr = param_group['initial_lr']
+        ratio = init_lr / base_lr
+        param_group['lr'] = lr * ratio
 
 
 if __name__ == '__main__':
