@@ -8,8 +8,8 @@ python train.py \
         --train_max_size 1333 \
         --val_min_size 800 \
         --val_max_size 1333 \
-        --lr 0.03 \
+        --lr 0.01 \
         --lr_backbone 0.01 \
         --wp_iter 500 \
-        --optimizer sgd \
+        --optimizer adamw \
         --accumulate 1
