@@ -119,7 +119,7 @@ if __name__ == '__main__':
                   post_process=True)
 
     # load weight
-    model.load_state_dict(torch.load(args.weight, map_location=device), strict=False)
+    model.load_state_dict(torch.load(args.weight, map_location='cpu'), strict=False)
     model = model.to(device).eval()
     print('Finished loading model!')
 
