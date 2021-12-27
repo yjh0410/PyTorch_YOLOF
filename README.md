@@ -328,11 +328,6 @@ If this trick still dosen't work, I have to give up. I have no any idea to optim
 
 <table><tbody>
 
-It doesn't work.
-
-
-
-
 
 # Train
 ```Shell
