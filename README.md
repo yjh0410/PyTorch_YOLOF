@@ -298,13 +298,13 @@ rate as 0.03 (the learning rate of backbone is 0.01).
 
 It doesn't work.
 
-## AdamW Optimizer
+## Accumulate 4 gradient
 - Backbone: ResNet-50
 - image size: shorter size = 800, longer size <= 1333
 - Batch size: 16
 - lr: 0.01
 - lr of backbone: 0.01
-- AdamW with weight decay 1e-4
+- SGD with momentum 0.9 and weight decay 1e-4
 - Matcher: L1 Top4
 - epoch: 12 (1x schedule)
 - lr decay: 8, 11
@@ -313,16 +313,25 @@ It doesn't work.
 - Decode box: Method-2
 - Scale loss: by number of total positive samples
 
-I try to use AdamW optimizer instead of SGD.
+YOLOF uses 64 batch size. But I just can use 1 3090 GPU, so I can't set batch size as 64.
+In this ablation study, I set `--accumulate` as 4, that is, the model accumulates 4 gradient
+to update parameters.
+
+If this trick still dosen't work, I have to give up. I have no any idea to optimize my YOLOF.
 
 <table><tbody>
-<tr><th align="left" bgcolor=#f8f8f8> Optimizer </th><td bgcolor=white> AP   </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white>  APs  </td><td bgcolor=white>  APm  </td><td bgcolor=white>  APl  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> Accu </th><td bgcolor=white> AP   </td><td bgcolor=white> AP50 </td><td bgcolor=white> AP75 </td><td bgcolor=white>  APs  </td><td bgcolor=white>  APm  </td><td bgcolor=white>  APl  </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> SGD </th><td bgcolor=white> 31.4 </td><td bgcolor=white> 51.0 </td><td bgcolor=white> 32.4 </td><td bgcolor=white> 17.8 </td><td bgcolor=white> 37.8 </td><td bgcolor=white> 41.3 </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> 1 </th><td bgcolor=white> 31.4 </td><td bgcolor=white> 51.0 </td><td bgcolor=white> 32.4 </td><td bgcolor=white> 17.8 </td><td bgcolor=white> 37.8 </td><td bgcolor=white> 41.3 </td></tr>
 
-<tr><th align="left" bgcolor=#f8f8f8> AdamW </th><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
+<tr><th align="left" bgcolor=#f8f8f8> 4 </th><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td><td bgcolor=white>  </td></tr>
 
 <table><tbody>
+
+It doesn't work.
+
+
+
 
 
 # Train
