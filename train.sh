@@ -11,5 +11,5 @@ python train.py \
         --lr 0.01 \
         --lr_backbone 0.01 \
         --wp_iter 500 \
-        --optimizer adamw \
-        --accumulate 1
+        --optimizer sgd \
+        --accumulate 4
