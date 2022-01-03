@@ -193,7 +193,7 @@ if __name__ == "__main__":
     max_size = int(round(1333 / 800 * img_size))
     dataset = VOCDetection(
                 data_dir='d:/datasets/VOCdevkit/',
-                transform=TrainTransforms(size=img_size, max_size=max_size, random_size=True))
+                transform=TrainTransforms(min_size=img_size, max_size=max_size, random_size=True))
     
     np.random.seed(0)
     class_colors = [(np.random.randint(255),

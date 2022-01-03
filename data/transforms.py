@@ -39,7 +39,7 @@ class ToTensor(object):
 
 # Color Jitter
 class ColorJitter(object):
-    def __init__(self, brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5):
+    def __init__(self, brightness=1.5, contrast=0., saturation=1.5, hue=0.1):
         self.transform = T.ColorJitter(brightness=brightness,
                                        contrast=contrast,
                                        saturation=saturation,
@@ -49,6 +49,79 @@ class ColorJitter(object):
         image = self.transform(image)
 
         return image, target, mask
+
+
+# RandomSizeCrop
+class RandomSizeCrop(object):
+    def __init__(self, max_size=800, mean=(0.485, 0.456, 0.406)):
+        self.min_size = round(max_size * 0.3)
+        self.max_size = max_size
+        self.mean = torch.tensor(mean).float()[..., None, None]
+
+    def crop(self, image, region, target=None, mask=None):
+        oh, ow = image.shape[1:]
+        cropped_image = torch.ones_like(image) * self.mean
+        cropped_image_ = F.crop(image, *region)
+        ph, pw = cropped_image_.shape[1:]
+
+        dh, dw = oh - ph, ow - pw
+        pleft = random.randint(0, dw)
+        ptop = random.randint(0, dh)
+        cropped_image[:, ptop:ptop+ph, pleft:pleft+pw] = cropped_image_
+
+        target = target.copy()
+        i, j, h, w = region
+
+        if "boxes" in target:
+            boxes = target["boxes"]
+            max_size = torch.as_tensor([w, h], dtype=torch.float32)
+            cropped_boxes = boxes - torch.as_tensor([j, i, j, i])
+            cropped_boxes = torch.min(cropped_boxes.reshape(-1, 2, 2), max_size)
+            cropped_boxes = cropped_boxes.clamp(min=0).reshape(-1, 4)
+            # offset
+            cropped_boxes[..., [0, 2]] += pleft
+            cropped_boxes[..., [1, 3]] += ptop
+
+            # check box
+            valid_box = []
+            if len(cropped_boxes) == 0:
+                valid_box.append([0., 0., 0., 0.])
+            else:
+                for box in cropped_boxes:
+                    x1, y1, x2, y2 = box
+                    bw = x2 - x1
+                    bh = y2 - y1
+                    if bw > 10. and bh > 10.:
+                        valid_box.append([x1, y1, x2, y2])
+
+                if len(valid_box) == 0:
+                    valid_box.append([0., 0., 0., 0.])
+
+            target["boxes"] = torch.tensor(valid_box).float()
+
+        if mask is not None:
+            # FIXME should we update the area here if there are no boxes?
+            mask = mask[:, ptop:ptop+ph, pleft:pleft+pw]
+            print(mask)
+
+        return cropped_image, target, mask
+
+    def __call__(self, image, target=None, mask=None):
+        height, width = image.shape[1:]
+        max_size = min(width, self.max_size)
+        if max_size > self.min_size:
+            w = random.randint(self.min_size, min(width, self.max_size))
+        else:
+            w = width
+
+        max_size = min(height, self.max_size)
+        if max_size > self.min_size:
+            h = random.randint(self.min_size, min(height, self.max_size))
+        else:
+            h = height
+
+        region = T.RandomCrop.get_params(image, [h, w])
+        return self.crop(image, region, target, mask)
 
 
 # RandomHFlip
@@ -183,6 +256,8 @@ class TrainTransforms(object):
             ToTensor(),
             RandomHorizontalFlip(),
             RandomShift(max_shift=32),
+            # ColorJitter(),
+            # RandomSizeCrop(max_size=max_size),
             Resize(min_size=min_size, max_size=max_size, random_size=random_size),
             Normalize(mean, std),
             PadImage(max_size=max_size)
