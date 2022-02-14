@@ -31,15 +31,8 @@ class FocalWithLogitsLoss(nn.Module):
             loss = alpha_t * loss
 
         if self.reduction == "mean":
-            pos_inds = (targets == 1.0).float()
-            # scale loss by number of positive samples of each sample and batch size
-            # [B, HW, KA, C] -> [B,]
-            # batch_size = logits.size(0)
-            # num_pos = pos_inds.sum([1, 2, 3]).clamp(1.0)
-            # loss = loss.sum([1, 2, 3]) / num_pos
-            # loss = loss.sum() / batch_size
-
             # scale loss by number of total positive samples
+            pos_inds = (targets == 1.0).float()
             num_pos = pos_inds.sum()
             loss = loss.sum() / num_pos
 
@@ -58,16 +51,21 @@ class Criterion(nn.Module):
         self.loss_cls_weight = loss_cls_weight
         self.loss_reg_weight = loss_reg_weight
 
-        self.cls_loss_f = FocalWithLogitsLoss(reduction='mean')
+        self.cls_loss_f = FocalWithLogitsLoss(reduction='none')
 
 
     def loss_labels(self, pred_cls, target, mask=None):
         # groundtruth    
         target_labels = target[..., :self.num_classes].float() # [B, HW, KA, C]
         target_valid = (target[..., -1] > -1.0).float()        # [B, HW, KA,]
+        target_pos = (target[..., -1] > 0.).float()            # [B, HW, KA,]
 
         # cls loss
         loss_cls = self.cls_loss_f(pred_cls, target_labels, target_valid, mask)
+
+        # scale loss by number of total positive samples
+        num_pos = target_pos.sum()
+        loss = loss.sum() / num_pos
 
         return loss_cls
 
@@ -76,7 +74,6 @@ class Criterion(nn.Module):
         # groundtruth    
         target_bboxes = target[..., self.num_classes:self.num_classes+4] # [B, HW, KA, 4]
         target_pos = (target[..., -1] > 0.).float()                      # [B, HW, KA,]
-        num_pos = target_pos.sum([1, 2]).clamp(1.0)                      # [B,]
 
         # reg loss
         B, HW, KA, _ = pred_box.size()
@@ -91,12 +88,6 @@ class Criterion(nn.Module):
         loss_reg = 1. - pred_giou if mask is None else (1. - pred_giou) * mask[..., None]
         # valid loss. Here we only compute the loss of positive samples.
         loss_reg = loss_reg * target_pos
-
-        # scale loss by number of positive samples of each sample and batch size
-        # [B, HW, KA] -> [B,]
-        # batch_size = pred_box.size(0)
-        # loss_reg = loss_reg.sum([1, 2]) / num_pos
-        # loss_reg = loss_reg.sum() / batch_size
 
         # scale loss by number of total positive samples
         num_pos = target_pos.sum()
