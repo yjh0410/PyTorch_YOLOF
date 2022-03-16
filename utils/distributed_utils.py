@@ -4,6 +4,7 @@ import torch
 import torch.distributed as dist
 import os
 import subprocess
+import pickle
 
 
 def all_gather(data):
