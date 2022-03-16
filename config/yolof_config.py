@@ -10,6 +10,7 @@ yolof_config = {
         'head_dims': 512,
         'bottle_ratio': 0.25,
         'anchor_size': [[32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
+        'ctr_clamp': 32,
         # post process
         'conf_thresh': 0.05,
         'nms_thresh': 0.6,
@@ -28,6 +29,7 @@ yolof_config = {
         'head_dims': 512,
         'bottle_ratio': 0.25,
         'anchor_size': [[32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
+        'ctr_clamp': 32,
         # epoch
         'max_epoch': 12,
         'lr_epoch': [8, 11],
@@ -43,6 +45,7 @@ yolof_config = {
         'head_dims': 512,
         'bottle_ratio': 0.25,
         'anchor_size': [[16, 16], [32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
+        'ctr_clamp': 32,
         # epoch
         'max_epoch': 12,
         'lr_epoch': [8, 11],
@@ -58,6 +61,7 @@ yolof_config = {
         'head_dims': 512,
         'bottle_ratio': 0.25,
         'anchor_size': [[16, 16], [32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
+        'ctr_clamp': 32,
         # epoch
         'max_epoch': 12,
         'lr_epoch': [8, 11],

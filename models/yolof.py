@@ -1,9 +1,13 @@
 import numpy as np
+import math
 import torch
 import torch.nn as nn
 from .conv import Conv
 from .resnet import build_backbone
 from .dilated_encoder import DilatedEncoder
+
+
+DEFAULT_SCALE_CLAMP = math.log(1000.0 / 16)
 
 
 class YOLOF(nn.Module):
@@ -17,6 +21,7 @@ class YOLOF(nn.Module):
                  norm = 'BN',
                  post_process=False):
         super(YOLOF, self).__init__()
+        self.cfg = cfg
         self.device = device
         self.fmp_size = None
         self.num_classes = num_classes
@@ -91,18 +96,19 @@ class YOLOF(nn.Module):
         else:
             # generate grid cells
             fmp_h, fmp_w = fmp_size
-            grid_y, grid_x = torch.meshgrid([torch.arange(fmp_h), torch.arange(fmp_w)])
+            anchor_y, anchor_x = torch.meshgrid([torch.arange(fmp_h), torch.arange(fmp_w)])
             # [H, W, 2] -> [HW, 2]
-            grid_xy = torch.stack([grid_x, grid_y], dim=-1).float().view(-1, 2) + 0.5
-            # [HW, 2] -> [1, HW, 1, 2] -> [1, HW, KA, 2] 
-            anchor_xy = grid_xy[None, :, None, :].repeat(1, 1, self.num_anchors, 1).to(self.device)
+            anchor_xy = torch.stack([anchor_x, anchor_y], dim=-1).float().view(-1, 2) + 0.5
+            # [HW, 2] -> [HW, 1, 2] -> [HW, KA, 2] 
+            anchor_xy = anchor_xy[:, None, :].repeat(1, self.num_anchors, 1).to(self.device)
+            anchor_xy *= self.stride
 
-            # [KA, 2] -> [1, 1, KA, 2] -> [1, HW, KA, 2]
-            anchor_wh = self.anchor_size[None, None, :, :].repeat(1, fmp_h*fmp_w, 1, 1).to(self.device)
-            anchor_wh = anchor_wh / self.stride
+            # [KA, 2] -> [1, KA, 2] -> [HW, KA, 2]
+            anchor_wh = self.anchor_size[None, None, :, :].repeat(fmp_h*fmp_w, 1, 1).to(self.device)
 
-            # [1, HW, KA, 4]
+            # [HW, KA, 4] -> [M, 4]
             anchor_boxes = torch.cat([anchor_xy, anchor_wh], dim=-1)
+            anchor_boxes = anchor_boxes.view(-1, 4)
 
             self.anchor_boxes = anchor_boxes
             self.fmp_size = fmp_size
@@ -112,20 +118,23 @@ class YOLOF(nn.Module):
 
     def decode_boxes(self, anchor_boxes, pred_reg):
         """
-            anchor_boxes: (List[tensor]) [1, HW, KA, 4]
-            pred_reg: (List[tensor]) [B, HW, KA, 4]
+            anchor_boxes: (List[tensor]) [1, M, 4]
+            pred_reg: (List[tensor]) [B, M, 4]
         """
         # x = x_anchor + dx * w_anchor
         # y = y_anchor + dy * h_anchor
-        pred_ctr_xy = anchor_boxes[..., :2] + pred_reg[..., :2] * anchor_boxes[..., 2:]
-
-        # x = x_anchor + dx
-        # y = y_anchor + dy
-        # pred_ctr_xy = anchor_boxes[..., :2] + pred_reg[..., :2]
+        pred_ctr_offset = pred_reg[..., :2] * anchor_boxes[..., 2:]
+        pred_ctr_offset = torch.clamp(pred_ctr_offset,
+                                      max=self.cfg['ctr_clamp'],
+                                      min=-self.cfg['ctr_clamp'])
+        pred_ctr_xy = anchor_boxes[..., :2] + pred_ctr_offset
 
         # w = w_anchor * exp(tw)
         # h = h_anchor * exp(th)
-        pred_wh = anchor_boxes[..., 2:] * pred_reg[..., 2:].exp()
+        pred_dwdh = pred_reg[..., 2:]
+        pred_dwdh = torch.clamp(pred_dwdh, 
+                                max=DEFAULT_SCALE_CLAMP)
+        pred_wh = anchor_boxes[..., 2:] * pred_dwdh.exp()
 
         # convert [x, y, w, h] -> [x1, y1, x2, y2]
         pred_x1y1 = pred_ctr_xy - 0.5 * pred_wh
@@ -225,22 +234,21 @@ class YOLOF(nn.Module):
         normalized_cls_pred = cls_pred + obj_pred - torch.log(
             1. + torch.clamp(cls_pred.exp(), max=1e4) + torch.clamp(
                 obj_pred.exp(), max=1e4))
-        # [B, KA, C, H, W] -> [B, H, W, KA, C] -> [B, HW, KA, C]
+        # [B, KA, C, H, W] -> [B, H, W, KA, C] -> [B, M, C], M = HW x KA
         normalized_cls_pred = normalized_cls_pred.permute(0, 3, 4, 1, 2).contiguous()
-        normalized_cls_pred = normalized_cls_pred.view(B, -1, self.num_anchors, self.num_classes)
+        normalized_cls_pred = normalized_cls_pred.view(B, -1, self.num_classes)
 
         # decode box
-        anchor_boxes = self.generate_anchors(fmp_size=[H, W]) # [1, HW, KA, 4]
-        # [B, KA*4, H, W] -> [B, KA, 4, H, W] -> [B, H, W, KA, 4] -> [B, HW, KA, 4]
+        anchor_boxes = self.generate_anchors(fmp_size=[H, W]) # [M, 4]
+        # [B, KA*4, H, W] -> [B, KA, 4, H, W] -> [B, H, W, KA, 4] -> [B, M, 4]
         reg_pred =reg_pred.view(B, -1, 4, H, W).permute(0, 3, 4, 1, 2).contiguous()
         reg_pred = reg_pred.view(B, -1, self.num_anchors, 4)
-        box_pred = self.decode_boxes(anchor_boxes, reg_pred)
+        box_pred = self.decode_boxes(anchor_boxes[None], reg_pred)
 
         if self.post_process:
             with torch.no_grad():
-                # [B, HW, KA, C] -> [HW x KA, C], where B = 1.
-                scores = normalized_cls_pred[0].view(-1, self.num_classes).sigmoid()
-                bboxes = box_pred[0].view(-1, 4) * self.stride
+                scores = normalized_cls_pred[0].sigmoid()  # [M, C]
+                bboxes = box_pred[0]                       # [M, 4]
 
                 # to cpu
                 scores = scores.cpu().numpy()
@@ -260,8 +268,8 @@ class YOLOF(nn.Module):
             if mask is not None:
                 # [B, H, W]
                 mask = torch.nn.functional.interpolate(mask[None], size=[H, W]).bool()[0]
-                # [B, HW]
-                mask = mask.flatten(1)
+                # [B, H, W, KA] -> [B, M,]
+                mask = mask[..., None].repeat(1, 1, 1, self.num_anchors).flatten(1)
 
             outputs = {"pred_cls": normalized_cls_pred,
                         "pred_box": box_pred,
