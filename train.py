@@ -232,6 +232,7 @@ def train():
             # to device
             images = images.to(device)
             masks = masks.to(device)
+            print(images.device, masks.device)
 
             # inference
             outputs = model(images, mask=masks)
