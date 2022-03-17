@@ -51,7 +51,7 @@ def ConvNormActivation(inplanes,
                        padding=0,
                        dilation=1,
                        groups=1,
-                       norm_layer='BN'):
+                       norm_type='BN'):
     """
     A help function to build a 'conv-bn-activation' module
     """
@@ -64,9 +64,9 @@ def ConvNormActivation(inplanes,
                             dilation=dilation,
                             groups=groups,
                             bias=False))
-    if norm_layer == 'BN':
+    if norm_type == 'BN':
         layers.append(nn.BatchNorm2d(planes, eps=1e-4, momentum=0.03))
-    elif norm_layer == 'FrozeBN':
+    elif norm_type == 'FrozeBN':
         layers.append(FrozenBatchNorm2d(planes, eps=1e-4))
     layers.append(nn.Mish(inplace=True))
     return nn.Sequential(*layers)
@@ -78,14 +78,14 @@ def make_cspdark_layer(block,
                        num_blocks,
                        is_csp_first_stage,
                        dilation=1,
-                       norm_layer='BN'):
+                       norm_type='BN'):
     downsample = ConvNormActivation(
         inplanes=planes,
         planes=planes if is_csp_first_stage else inplanes,
         kernel_size=1,
         stride=1,
         padding=0,
-        norm_layer=norm_layer
+        norm_type=norm_type
     )
 
     layers = []
@@ -96,7 +96,7 @@ def make_cspdark_layer(block,
                 planes=planes if is_csp_first_stage else inplanes,
                 downsample=downsample if i == 0 else None,
                 dilation=dilation,
-                norm_layer=norm_layer
+                norm_type=norm_type
             )
         )
     return nn.Sequential(*layers)
@@ -109,7 +109,7 @@ class DarkBlock(nn.Module):
                  planes,
                  dilation=1,
                  downsample=None,
-                 norm_layer='BN'):
+                 norm_type='BN'):
         """Residual Block for DarkNet.
         This module has the dowsample layer (optional),
         1x1 conv layer and 3x3 conv layer.
@@ -118,10 +118,10 @@ class DarkBlock(nn.Module):
 
         self.downsample = downsample
 
-        if norm_layer == 'BN':
+        if norm_type == 'BN':
             self.bn1 = nn.BatchNorm2d(inplanes, eps=1e-4, momentum=0.03)
             self.bn2 = nn.BatchNorm2d(planes, eps=1e-4, momentum=0.03)
-        elif norm_layer == 'FrozeBN':
+        elif norm_type == 'FrozeBN':
             self.bn1 = FrozenBatchNorm2d(inplanes, eps=1e-4)
             self.bn2 = FrozenBatchNorm2d(planes, eps=1e-4)
 
@@ -192,7 +192,7 @@ class CrossStagePartialBlock(nn.Module):
                  is_csp_first_stage,
                  dilation=1,
                  stride=2,
-                 norm_layer='BN'):
+                 norm_type='BN'):
         super(CrossStagePartialBlock, self).__init__()
 
         self.base_layer = ConvNormActivation(
@@ -202,7 +202,7 @@ class CrossStagePartialBlock(nn.Module):
             stride=stride,
             padding=dilation,
             dilation=dilation,
-            norm_layer=norm_layer
+            norm_type=norm_type
         )
         self.partial_transition1 = ConvNormActivation(
             inplanes=planes,
@@ -210,7 +210,7 @@ class CrossStagePartialBlock(nn.Module):
             kernel_size=1,
             stride=1,
             padding=0,
-            norm_layer=norm_layer
+            norm_type=norm_type
         )
         self.stage_layers = stage_layers
 
@@ -220,7 +220,7 @@ class CrossStagePartialBlock(nn.Module):
             kernel_size=1,
             stride=1,
             padding=0,
-            norm_layer=norm_layer
+            norm_type=norm_type
         )
         self.fuse_transition = ConvNormActivation(
             inplanes=planes if not is_csp_first_stage else planes * 2,
@@ -228,7 +228,7 @@ class CrossStagePartialBlock(nn.Module):
             kernel_size=1,
             stride=1,
             padding=0,
-            norm_layer=norm_layer
+            norm_type=norm_type
         )
 
     def forward(self, x):
@@ -257,7 +257,7 @@ class CSPDarkNet53(nn.Module):
         res5_dilation (int): dilation for the last stage
     """
 
-    def __init__(self, norm_layer='BN', res5_dilation=1):
+    def __init__(self, norm_type='BN', res5_dilation=1):
         super(CSPDarkNet53, self).__init__()
 
         self.block =  DarkBlock
@@ -268,11 +268,12 @@ class CSPDarkNet53(nn.Module):
 
         self.backbone = nn.ModuleDict()
         self.layer_names = []
+        print(norm_type)
         # First stem layer
         self.backbone["conv1"] = nn.Conv2d(3, self.inplanes, kernel_size=3, padding=1, bias=False)
-        if norm_layer == 'BN':
+        if norm_type == 'BN':
             self.backbone["bn1"] = nn.BatchNorm2d(self.inplanes, eps=1e-4, momentum=0.03)
-        elif norm_layer == 'FrozeBN':
+        elif norm_type == 'FrozeBN':
             self.backbone["bn1"] = FrozenBatchNorm2d(self.inplanes, eps=1e-4)
         self.backbone["act1"] = nn.Mish(inplace=True)
 
@@ -290,7 +291,7 @@ class CSPDarkNet53(nn.Module):
                 num_blocks=num_blocks,
                 is_csp_first_stage=True if i == 0 else False,
                 dilation=dilation,
-                norm_layer=norm_layer
+                norm_type=norm_type
             )
             layer = CrossStagePartialBlock(
                 self.inplanes,
@@ -299,7 +300,7 @@ class CSPDarkNet53(nn.Module):
                 is_csp_first_stage=True if i == 0 else False,
                 dilation=dilation,
                 stride=stride,
-                norm_layer=norm_layer
+                norm_type=norm_type
             )
             self.inplanes = planes
             layer_name = 'layer{}'.format(i + 1)
@@ -311,8 +312,6 @@ class CSPDarkNet53(nn.Module):
         # freeze stem
         print('freeze stem ...')
         for p in self.backbone["conv1"].parameters():
-            p.requires_grad = False
-        for p in self.backbone["bn1"].parameters():
             p.requires_grad = False
         # freeze stage-1
         print('freeze stage-1 ...')
@@ -337,11 +336,7 @@ def cspdarknet53(pretrained=False, res5_dilation=1, norm_type='BN'):
     """
     Create a CSPDarkNet.
     """
-    if norm_type == 'BN':
-        norm_layer = nn.BatchNorm2d
-    elif norm_type == 'FrozeBN':
-        norm_layer = FrozenBatchNorm2d
-    model = CSPDarkNet53(norm_layer=norm_layer, res5_dilation=res5_dilation)
+    model = CSPDarkNet53(norm_type=norm_type, res5_dilation=res5_dilation)
     if pretrained:
         print('Loading the pretrained model ...')
         path_to_weight = os.path.dirname(os.path.abspath(__file__)) + '/weights/cspdarknet53/cspdarknet53.pth'
@@ -368,13 +363,16 @@ def cspdarknet53(pretrained=False, res5_dilation=1, norm_type='BN'):
     return model
 
 
-def build_cspdarknet(model_name='cspdarknet53', pretrained=False):
+def build_cspdarknet(model_name='cspdarknet53', pretrained=False, norm_type='BN'):
     if model_name == 'cspdarknet53':
-        backbone = cspdarknet53(pretrained=pretrained)
+        backbone = cspdarknet53(pretrained=pretrained, 
+                                norm_type=norm_type)
         feat_dim = 1024
 
     elif model_name == 'cspdarknet53-d':
-        backbone = cspdarknet53(pretrained=pretrained, res5_dilation=2)
+        backbone = cspdarknet53(pretrained=pretrained, 
+                                res5_dilation=2,
+                                norm_type=norm_type)
         feat_dim = 1024
 
     else:
