@@ -59,11 +59,11 @@ def parse_args():
     # input image size               
     parser.add_argument('--train_min_size', type=int, default=800,
                         help='The shorter train size of the input image')
-    parser.add_argument('--train_max_size', type=int, default=800,
+    parser.add_argument('--train_max_size', type=int, default=1333,
                         help='The longer train size of the input image')
     parser.add_argument('--val_min_size', type=int, default=800,
                         help='The shorter val size of the input image')
-    parser.add_argument('--val_max_size', type=int, default=800,
+    parser.add_argument('--val_max_size', type=int, default=1333,
                         help='The longer val size of the input image')
 
     # model
