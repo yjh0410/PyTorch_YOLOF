@@ -1,13 +1,13 @@
-# 8 GPUs
-python -m torch.distributed.run --nproc_per_node=8 train.py \
+# 2 GPUs
+python -m torch.distributed.run --nproc_per_node=2 train.py \
                                                     --cuda \
                                                     -dist \
-                                                    --num_gpu8 \
+                                                    --num_gpu 2 \
                                                     -d coco \
                                                     --root /mnt/share/ssd2/dataset/ \
                                                     -v yolof50 \
-                                                    -lr 0.12 \
-                                                    -lr_bk 0.04 \
+                                                    -lr 0.03 \
+                                                    -lr_bk 0.01 \
                                                     --batch_size 8 \
                                                     --train_min_size 800 \
                                                     --train_max_size 1333 \
