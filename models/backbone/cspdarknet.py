@@ -1,9 +1,13 @@
 """
     This is a CSPDarkNet-53 with Mish.
 """
-import os
 import torch
 import torch.nn as nn
+
+
+model_urls = {
+    "cspdarknet53": "https://github.com/yjh0410/PyTorch_YOLO-Family/releases/download/yolo-weight/cspdarknet53.pth",
+}
 
 
 class FrozenBatchNorm2d(torch.nn.Module):
@@ -320,7 +324,6 @@ class CSPDarkNet53(nn.Module):
 
 
     def forward(self, x):
-        output = []
         x = self.backbone["conv1"](x)
         x = self.backbone["bn1"](x)
         x = self.backbone["act1"](x)
@@ -337,10 +340,11 @@ def cspdarknet53(pretrained=False, res5_dilation=1, norm_type='BN'):
     Create a CSPDarkNet.
     """
     model = CSPDarkNet53(norm_type=norm_type, res5_dilation=res5_dilation)
+    # load weight
     if pretrained:
-        print('Loading the pretrained model ...')
-        path_to_weight = os.path.dirname(os.path.abspath(__file__)) + '/weights/cspdarknet53/cspdarknet53.pth'
-        checkpoint = torch.load(path_to_weight, map_location='cpu')
+        print('Loading pretrained cspdarknet53 ...')
+        url = model_urls['cspdarknet53']
+        checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu", check_hash=True)
         # checkpoint state dict
         checkpoint_state_dict = checkpoint.pop("model")
         # model state dict

@@ -264,7 +264,7 @@ class YOLOF(nn.Module):
                 mask = torch.nn.functional.interpolate(mask[None], size=[H, W]).bool()[0]
                 # [B, H, W, KA] -> [B, HW]
                 mask = mask.flatten(1)
-                # [B, HW, KA] -> [BM,], M= HW x KA
+                # [B, HW] -> [B, HW, KA] -> [BM,], M= HW x KA
                 mask = mask[..., None].repeat(1, 1, self.num_anchors).flatten()
 
             outputs = {"pred_cls": cls_pred,
