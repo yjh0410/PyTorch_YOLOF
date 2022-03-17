@@ -38,16 +38,25 @@ class SigmoidFocalWithLogitsLoss(nn.Module):
 
 
 class Criterion(nn.Module):
-    def __init__(self, cfg, device, loss_cls_weight=1.0, loss_reg_weight=1.0, num_classes=80):
+    def __init__(self, 
+                 cfg, 
+                 device, 
+                 alpha=0.25,
+                 gamma=2.0,
+                 loss_cls_weight=1.0, 
+                 loss_reg_weight=1.0, 
+                 num_classes=80):
         super().__init__()
         self.cfg = cfg
         self.device = device
+        self.alpha = alpha
+        self.gamma = gamma
         self.matcher = UniformMatcher(cfg['topk'])
         self.num_classes = num_classes
         self.loss_cls_weight = loss_cls_weight
         self.loss_reg_weight = loss_reg_weight
 
-        self.cls_loss_f = SigmoidFocalWithLogitsLoss(reduction='none')
+        self.cls_loss_f = SigmoidFocalWithLogitsLoss(reduction='none', gamma=gamma, alpha=alpha)
 
 
     def loss_labels(self, pred_cls, tgt_cls, num_boxes):
@@ -75,7 +84,6 @@ class Criterion(nn.Module):
 
 
     def forward(self,
-                img_size, 
                 outputs, 
                 targets, 
                 anchor_boxes=None):
@@ -91,7 +99,7 @@ class Criterion(nn.Module):
         B = len(targets)
         pred_box = outputs['pred_box']
         pred_cls = outputs['pred_cls'].reshape(-1, self.num_classes)
-        indices = self.matcher(img_size, pred_box, anchor_boxes, targets)
+        indices = self.matcher(pred_box, anchor_boxes, targets)
         anchor_boxes = box_cxcywh_to_xyxy(anchor_boxes)
         # [M, 4] -> [1, M, 4] -> [B, M, 4]
         anchor_boxes = anchor_boxes[None].repeat(B, 1, 1)
@@ -124,7 +132,7 @@ class Criterion(nn.Module):
             [src + idx * anchor_boxes[0].shape[0] for idx, (src, _) in
              enumerate(indices)])
         # [BM, C]
-        gt_cls = torch.full(outputs['pred_cls'].shape[:1],
+        gt_cls = torch.full(pred_cls.shape[:1],
                                 self.num_classes,
                                 dtype=torch.int64,
                                 device=self.device)
@@ -134,7 +142,6 @@ class Criterion(nn.Module):
 
         gt_cls[src_idx] = tgt_cls_o.to(self.device)
 
-        valid_idxs = gt_cls >= 0
         foreground_idxs = (gt_cls >= 0) & (gt_cls != self.num_classes)
         num_foreground = foreground_idxs.sum()
 
@@ -146,14 +153,20 @@ class Criterion(nn.Module):
         num_foreground = torch.clamp(num_foreground / get_world_size(), min=1).item()
 
         # cls loss
-        loss_labels = self.loss_labels(pred_cls[valid_idxs], gt_cls_target[valid_idxs], num_foreground)
+        masks = outputs['mask']
+        valid_idxs = (gt_cls >= 0) & masks
+        loss_labels = self.loss_labels(pred_cls[valid_idxs], 
+                                       gt_cls_target[valid_idxs], 
+                                       num_foreground)
 
         # box loss
-        tgt_boxes = torch.cat([t['boxes'][i] * img_size
+        tgt_boxes = torch.cat([t['boxes'][i]
                                     for t, (_, i) in zip(targets, indices)], dim=0).to(self.device)
         tgt_boxes = tgt_boxes[~pos_ignore_idx]
         matched_pred_box = pred_box.reshape(-1, 4)[src_idx[~pos_ignore_idx]]
-        loss_bboxes = self.loss_bboxes(matched_pred_box, tgt_boxes, num_foreground)
+        loss_bboxes = self.loss_bboxes(matched_pred_box, 
+                                       tgt_boxes, 
+                                       num_foreground)
 
         # total loss
         losses = self.loss_cls_weight * loss_labels + self.loss_reg_weight * loss_bboxes

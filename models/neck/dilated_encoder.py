@@ -1,18 +1,21 @@
-import torch
 import torch.nn as nn
-from .conv import Conv
+from ..basic.conv import Conv
 from utils import weight_init
 
 
 # Dilated Encoder
 class Bottleneck(nn.Module):
-    def __init__(self, c, d=1, e=0.5, norm='BN', act=True):
+    def __init__(self, 
+                 in_dim, 
+                 dilation=1, 
+                 expand_ratio=0.25,
+                 act_type='relu'):
         super(Bottleneck, self).__init__()
-        c_ = int(c * e)
+        inter_dim = int(in_dim * expand_ratio)
         self.branch = nn.Sequential(
-            Conv(c, c_, k=1, norm=norm, act=act),
-            Conv(c_, c_, k=3, norm=norm, p=d, d=d, act=act),
-            Conv(c_, c, k=1, norm=norm, act=act)
+            Conv(in_dim, inter_dim, k=1, act_type=act_type),
+            Conv(inter_dim, inter_dim, k=3, p=dilation, d=dilation, act_type=act_type),
+            Conv(inter_dim, in_dim, k=1, act_type=act_type)
         )
 
     def forward(self, x):
@@ -21,15 +24,23 @@ class Bottleneck(nn.Module):
 
 class DilatedEncoder(nn.Module):
     """ DilateEncoder """
-    def __init__(self, c1, c2, e=0.5, norm='BN', act=True, dilation_list=[2, 4, 6, 8]):
+    def __init__(self, 
+                 in_dim, 
+                 out_dim, 
+                 expand_ratio=0.25, 
+                 dilation_list=[2, 4, 6, 8],
+                 act_type='relu'):
         super(DilatedEncoder, self).__init__()
         self.projector = nn.Sequential(
-            Conv(c1, c2, k=1, norm=norm, act=False),
-            Conv(c2, c2, k=3, p=1, norm=norm, act=False)
+            Conv(in_dim, out_dim, k=1, act_type=None),
+            Conv(out_dim, out_dim, k=3, p=1, act_type=None)
         )
         encoders = []
         for d in dilation_list:
-            encoders.append(Bottleneck(c=c2, d=d, e=e, norm=norm, act=act))
+            encoders.append(Bottleneck(in_dim=out_dim, 
+                                       dilation=d, 
+                                       expand_ratio=expand_ratio, 
+                                       act_type=act_type))
         self.encoders = nn.Sequential(*encoders)
 
         self._init_weight()

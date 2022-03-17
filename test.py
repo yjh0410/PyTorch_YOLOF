@@ -12,7 +12,7 @@ from data.coco import coco_class_index, coco_class_labels, COCODataset
 from data.transforms import ValTransforms
 from utils.misc import TestTimeAugmentation
 
-from models.yolof import YOLOF
+from models.yolof import build_model
 
 
 def parse_args():
@@ -31,15 +31,22 @@ def parse_args():
                         help='use cuda.')
     parser.add_argument('--save_folder', default='det_results/', type=str,
                         help='Dir to save results')
+
     # model
-    parser.add_argument('-v', '--version', default='yolof_r50_C5_1x',
-                        help='yolof_r50_C5_1x, yolof_r101_C5_1x')
+    parser.add_argument('-v', '--version', default='yolof50', choices=['yolof18', 'yolof50', 'yolof50-DC5', \
+                                                                       'yolof101', 'yolof101-DC5', 'yolof53', 'yolof53-DC5'],
+                        help='build yolof')
     parser.add_argument('--weight', default='weight/',
                         type=str, help='Trained state_dict file path to open')
     parser.add_argument('--conf_thresh', default=0.1, type=float,
                         help='NMS threshold')
     parser.add_argument('--nms_thresh', default=0.45, type=float,
                         help='NMS threshold')
+    parser.add_argument('--topk', default=100, type=int,
+                        help='NMS threshold')
+    parser.add_argument('-bg', '--background', action='store_true', default=False,
+                        help='add background class')
+
     # dataset
     parser.add_argument('--root', default='/mnt/share/ssd2/dataset',
                         help='data root')
@@ -200,13 +207,11 @@ if __name__ == '__main__':
     cfg = yolof_config[args.version]
 
     # build model
-    model = YOLOF(cfg=cfg,
-                  device=device,
-                  num_classes=num_classes,
-                  trainable=False,
-                  conf_thresh=args.conf_thresh,
-                  nms_thresh=args.nms_thresh,
-                  post_process=True)
+    model = build_model(args=args, 
+                        cfg=cfg,
+                        device=device, 
+                        num_classes=num_classes, 
+                        trainable=False)
 
     # load weight
     model.load_state_dict(torch.load(args.weight, map_location='cpu'), strict=False)
@@ -218,7 +223,10 @@ if __name__ == '__main__':
 
     # transform
     transform = ValTransforms(min_size=args.min_size, 
-                              max_size=args.max_size)
+                              max_size=args.max_size,
+                              pixel_mean=cfg['pixel_mean'],
+                              pixel_std=cfg['pixel_std'],
+                              format=cfg['format'])
 
     # run
     test(args=args,

@@ -41,37 +41,34 @@ def is_parallel(model):
     return type(model) in (nn.parallel.DataParallel, nn.parallel.DistributedDataParallel)
 
 
-def detection_collate(batch):
-    """Custom collate fn for dealing with batches of images that have a different
-    number of associated object annotations (bounding boxes).
+def get_total_grad_norm(parameters, norm_type=2):
+    parameters = list(filter(lambda p: p.grad is not None, parameters))
+    norm_type = float(norm_type)
+    device = parameters[0].grad.device
+    total_norm = torch.norm(torch.stack([torch.norm(p.grad.detach(), norm_type).to(device) for p in parameters]),
+                            norm_type)
+    return total_norm
 
-    Arguments:
-        batch: (tuple) A tuple of tensor images and lists of annotations
 
-    Return:
-        A tuple containing:
-            1) (tensor) batch of images stacked on their 0 dim
-            2) (list of tensors) annotations for a given image are stacked on
-                                 0 dim
-            3) (tensor) batch of masks stacked on their 0 dim
-    """
-    targets = []
-    images = []
-    masks = []
+class CollateFunc(object):
+    def __call__(self, batch):
+        targets = []
+        images = []
+        masks = []
 
-    for sample in batch:
-        image = sample[0]
-        target = sample[1]
-        mask = sample[2]
+        for sample in batch:
+            image = sample[0]
+            target = sample[1]
+            mask = sample[2]
 
-        images.append(image)
-        targets.append(target)
-        masks.append(mask)
+            images.append(image)
+            targets.append(target)
+            masks.append(mask)
 
-    images = torch.stack(images, 0) # [B, C, H, W]
-    masks = torch.stack(masks, 0)   # [B, H, W]
+        images = torch.stack(images, 0) # [B, C, H, W]
+        masks = torch.stack(masks, 0)   # [B, H, W]
 
-    return images, targets, masks
+        return images, targets, masks
 
 
 # test time augmentation(TTA)

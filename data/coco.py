@@ -1,4 +1,5 @@
 import os
+import random
 import numpy as np
 
 from torch.utils.data import Dataset
@@ -36,9 +37,12 @@ class COCODataset(Dataset):
     COCO dataset class.
     """
     def __init__(self, 
+                 img_size=640,
                  data_dir=None, 
                  image_set='train2017',
-                 transform=None):
+                 transform=None,
+                 color_augment=None,
+                 mosaic=False):
         """
         COCO dataset initialization. Annotation data are read into memory by COCO API.
         Args:
@@ -53,6 +57,7 @@ class COCODataset(Dataset):
             self.json_file='instances_val2017.json'
         elif image_set == 'test2017':
             self.json_file='image_info_test-dev2017.json'
+        self.img_size = img_size
         self.image_set = image_set
         self.data_dir = data_dir
         self.coco = COCO(os.path.join(self.data_dir, 'annotations', self.json_file))
@@ -60,6 +65,10 @@ class COCODataset(Dataset):
         self.class_ids = sorted(self.coco.getCatIds())
         # augmentation
         self.transform = transform
+        self.color_augment = color_augment
+        self.mosaic = mosaic
+        if self.mosaic:
+            print('use Mosaic Augmentation ...')
 
 
     def __len__(self):
@@ -72,7 +81,7 @@ class COCODataset(Dataset):
 
 
     def load_image_target(self, index):
-        anno_ids = self.coco.getAnnIds(imgIds=[int(index)], iscrowd=None)
+        anno_ids = self.coco.getAnnIds(imgIds=[int(index)], iscrowd=0)
         annotations = self.coco.loadAnns(anno_ids)
 
         # load an image
@@ -105,13 +114,8 @@ class COCODataset(Dataset):
             else:
                 print('No bbox !!!')
 
-        # check the annotation
-        if len(anno) == 0:
-            anno = np.zeros([1, 5])
-        else:
-            anno = np.array(anno)
-        
-        # target
+        # guard against no boxes via resizing
+        anno = np.array(anno).reshape(-1, 5)
         target = {
             "boxes": anno[:, :4],
             "labels": anno[:, 4],
@@ -121,12 +125,123 @@ class COCODataset(Dataset):
         return image, target
 
 
-    def pull_item(self, index):
-        id_ = self.ids[index]
-        image, target = self.load_image_target(id_)
-        # augment
-        image, target, mask = self.transform(image, target)
+    def load_mosaic(self, index):
+        ids_list_ = self.ids[:index] + self.ids[index+1:]
+        # random sample other indexs
+        id1 = self.ids[index]
+        id2, id3, id4 = random.sample(ids_list_, 3)
+        ids = [id1, id2, id3, id4]
+
+        img_lists = []
+        tg_lists = []
+        # load image and target
+        for id_ in ids:
+            img_i, target_i = self.load_image_target(id_)
+            img_lists.append(img_i)
+            tg_lists.append(target_i)
+
+        mosaic_img = np.zeros([self.img_size*2, self.img_size*2, img_i.shape[2]], dtype=np.uint8)
+        # mosaic center
+        yc, xc = [int(random.uniform(-x, 2*self.img_size + x)) for x in [-self.img_size // 2, -self.img_size // 2]]
+        # yc = xc = self.img_size
+
+        mosaic_bboxes = []
+        mosaic_labels = []
+        for i in range(4):
+            img_i, target_i = img_lists[i], tg_lists[i]
+            bboxes_i = target_i["boxes"]
+            labels_i = target_i["labels"]
+
+            h0, w0, _ = img_i.shape
+
+            # resize
+            if np.random.randint(2):
+                # keep aspect ratio
+                r = self.img_size / max(h0, w0)
+                if r != 1: 
+                    img_i = cv2.resize(img_i, (int(w0 * r), int(h0 * r)))
+            else:
+                img_i = cv2.resize(img_i, (int(self.img_size), int(self.img_size)))
+            h, w, _ = img_i.shape
+
+            # place img in img4
+            if i == 0:  # top left
+                x1a, y1a, x2a, y2a = max(xc - w, 0), max(yc - h, 0), xc, yc  # xmin, ymin, xmax, ymax (large image)
+                x1b, y1b, x2b, y2b = w - (x2a - x1a), h - (y2a - y1a), w, h  # xmin, ymin, xmax, ymax (small image)
+            elif i == 1:  # top right
+                x1a, y1a, x2a, y2a = xc, max(yc - h, 0), min(xc + w, self.img_size * 2), yc
+                x1b, y1b, x2b, y2b = 0, h - (y2a - y1a), min(w, x2a - x1a), h
+            elif i == 2:  # bottom left
+                x1a, y1a, x2a, y2a = max(xc - w, 0), yc, xc, min(self.img_size * 2, yc + h)
+                x1b, y1b, x2b, y2b = w - (x2a - x1a), 0, w, min(y2a - y1a, h)
+            elif i == 3:  # bottom right
+                x1a, y1a, x2a, y2a = xc, yc, min(xc + w, self.img_size * 2), min(self.img_size * 2, yc + h)
+                x1b, y1b, x2b, y2b = 0, 0, min(w, x2a - x1a), min(y2a - y1a, h)
+
+            mosaic_img[y1a:y2a, x1a:x2a] = img_i[y1b:y2b, x1b:x2b]
+            padw = x1a - x1b
+            padh = y1a - y1b
+
+            # labels
+            bboxes_i_ = bboxes_i.copy()
+            if len(bboxes_i) > 0:
+                # a valid target, and modify it.
+                bboxes_i_[:, 0] = (w * bboxes_i[:, 0] / w0 + padw)
+                bboxes_i_[:, 1] = (h * bboxes_i[:, 1] / h0 + padh)
+                bboxes_i_[:, 2] = (w * bboxes_i[:, 2] / w0 + padw)
+                bboxes_i_[:, 3] = (h * bboxes_i[:, 3] / h0 + padh)    
+
+                mosaic_bboxes.append(bboxes_i_)
+                mosaic_labels.append(labels_i)
+
+
+        valid_bboxes = []
+        valid_labels = []
+        # check target
+        if len(mosaic_bboxes) > 0:
+            mosaic_bboxes = np.concatenate(mosaic_bboxes)
+            mosaic_labels = np.concatenate(mosaic_labels)
+            # Cutout/Clip targets
+            np.clip(mosaic_bboxes, 0, 2 * self.img_size, out=mosaic_bboxes)
+
+            # check boxes
+            for box, label in zip(mosaic_bboxes, mosaic_labels):
+                x1, y1, x2, y2 = box
+                bw, bh = x2 - x1, y2 - y1
+                if bw > 10. and bh > 10.:
+                    valid_bboxes.append([x1, y1, x2, y2])
+                    valid_labels.append(label)
+
+        # guard against no boxes via resizing
+        valid_bboxes = np.array(valid_bboxes).reshape(-1, 4)
+        valid_labels = np.array(valid_labels).reshape(-1)
+        mosaic_bboxes = np.array(valid_bboxes)
+        mosaic_labels = np.array(valid_labels)
+
+        # target
+        mosaic_target = {
+            "boxes": mosaic_bboxes,
+            "labels": mosaic_labels,
+            "orig_size": [self.img_size*2, self.img_size*2]
+        }
         
+        return mosaic_img, mosaic_target
+
+
+    def pull_item(self, index):
+        # load a mosaic image
+        if self.mosaic and np.random.randint(2):
+            image, target = self.load_mosaic(index)
+            # augment
+            image, target, mask = self.color_augment(image, target)
+
+        # load an image and target
+        else:
+            img_id = self.ids[index]
+            image, target = self.load_image_target(img_id)
+            # augment
+            image, target, mask = self.transform(image, target)
+            
         return image, target, mask
 
 
@@ -169,16 +284,36 @@ class COCODataset(Dataset):
 
 
 if __name__ == "__main__":
-    from transforms import TrainTransforms, ValTransforms
+    from transforms import TrainTransforms, ValTransforms, BaseTransforms
 
-    rgb_mean = np.array((0.485, 0.456, 0.406), dtype=np.float32)
-    rgb_std = np.array((0.229, 0.224, 0.225), dtype=np.float32)
+    trans_config = [
+            {'name': 'ToTensor'},
+            {'name': 'RandomHorizontalFlip'},
+            {'name': 'RandomShift',
+             'max_shift': 32},
+            {'name': 'Resize'},
+            {'name': 'Normalize'},
+            {'name': 'PadImage'}
+        ]
+    min_size = 800
+    max_size = int(round(1333 / 800 * min_size))
+    random_size = [640, 672, 704, 736, 768, 800]
+    transform = TrainTransforms(trans_config=trans_config,
+                                min_size=min_size,
+                                max_size=max_size,
+                                random_size=random_size)
+    color_augment = BaseTransforms(min_size=max_size,
+                                   max_size=max_size,
+                                   random_size=random_size)
+    pixel_mean = np.array(transform.pixel_mean, dtype=np.float32)
+    pixel_std = np.array(transform.pixel_std, dtype=np.float32)
 
-    img_size = 800
-    dataset = COCODataset(
-                data_dir='/mnt/share/ssd2/dataset/COCO/',
-                image_set='train2017',
-                transform=TrainTransforms(img_size))
+    dataset = COCODataset(img_size=max_size,
+                          data_dir='E:\\python_work\\object_detection\\dataset\\COCO',
+                          image_set='train2017',
+                          transform=transform,
+                          color_augment=color_augment,
+                          mosaic=True)
     
     np.random.seed(0)
     class_colors = [(np.random.randint(255),
@@ -191,7 +326,7 @@ if __name__ == "__main__":
         # to numpy
         image = image.permute(1, 2, 0).numpy()
         # denormalize
-        image = ((image * rgb_std + rgb_mean)*255).astype(np.uint8)
+        image = ((image * pixel_std + pixel_mean)*255).astype(np.uint8)
         # to BGR format
         image = image[:, :, (2, 1, 0)]
         image = image.copy()
@@ -206,11 +341,6 @@ if __name__ == "__main__":
             color = class_colors[cls_id]
             # class name
             label = coco_class_labels[coco_class_index[cls_id]]
-            # bbox
-            x1 *= img_w
-            y1 *= img_h
-            x2 *= img_w
-            y2 *= img_h
             image = cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), (0,0,255), 2)
             # put the test on the bbox
             cv2.putText(image, label, (int(x1), int(y1 - 5)), 0, 0.5, color, 1, lineType=cv2.LINE_AA)

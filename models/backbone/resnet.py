@@ -4,15 +4,18 @@ Backbone modules.
 """
 
 import torch
-import torchvision
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
+
+try:
+    from .vision import model_resnet
+except:
+    from vision import model_resnet
 
 
 class FrozenBatchNorm2d(torch.nn.Module):
     """
     BatchNorm2d where the batch statistics and the affine parameters are fixed.
-
     Copy-paste from torchvision.misc.ops with added eps before rqsrt,
     without which any other models than torchvision.models.resnet[18,34,50,101]
     produce nans.
@@ -50,15 +53,12 @@ class FrozenBatchNorm2d(torch.nn.Module):
 
 class BackboneBase(nn.Module):
 
-    def __init__(self, backbone: nn.Module, train_backbone: bool, num_channels: int, return_interm_layers: bool):
+    def __init__(self, backbone: nn.Module, num_channels: int):
         super().__init__()
         for name, parameter in backbone.named_parameters():
-            if not train_backbone or 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
+            if 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
                 parameter.requires_grad_(False)
-        if return_interm_layers:
-            return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
-        else:
-            return_layers = {'layer4': "0"}
+        return_layers = {'layer4': "0"}        
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
         self.num_channels = num_channels
 
@@ -68,7 +68,7 @@ class BackboneBase(nn.Module):
         for name, fmp in xs.items():
             fmp_list.append(fmp)
 
-        return fmp_list
+        return fmp_list[-1]
 
 
 class Backbone(BackboneBase):
@@ -76,33 +76,38 @@ class Backbone(BackboneBase):
     def __init__(self, 
                  name: str,
                  pretrained: bool,
-                 train_backbone: bool,
-                 return_interm_layers: bool,
-                 dilation: bool):
-        backbone = getattr(torchvision.models, name)(
+                 dilation: bool,
+                 norm_type: str):
+        if norm_type == 'BN':
+            norm_layer = nn.BatchNorm2d
+        elif norm_type == 'FrozeBN':
+            norm_layer = FrozenBatchNorm2d
+        backbone = getattr(model_resnet, name)(
             replace_stride_with_dilation=[False, False, dilation],
-            pretrained=pretrained, norm_layer=FrozenBatchNorm2d)
+            pretrained=pretrained, norm_layer=norm_layer)
         num_channels = 512 if name in ('resnet18', 'resnet34') else 2048
-        super().__init__(backbone, train_backbone, num_channels, return_interm_layers)
+        super().__init__(backbone, num_channels)
 
 
-def build_backbone(model_name='resnet18', pretrained=False, train_backbone=True, return_interm_layers=False):
+def build_resnet(model_name='resnet18', pretrained=False, norm_type='BN'):
     if model_name in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnext101_32x8d']:
-        backbone = Backbone(model_name, pretrained, train_backbone, return_interm_layers, dilation=False)
-        output_stride = 32
+        backbone = Backbone(model_name, 
+                            pretrained, 
+                            dilation=False,
+                            norm_type=norm_type)
     elif model_name in ['resnet50-d', 'resnet101-d']:
-        backbone = Backbone(model_name[:-2], pretrained, train_backbone, return_interm_layers, dilation=True)
-        output_stride = 16
-    return backbone, backbone.num_channels, output_stride
+        backbone = Backbone(model_name[:-2], 
+                            pretrained, 
+                            dilation=True,
+                            norm_type=norm_type)
+
+    return backbone, backbone.num_channels
 
 
 if __name__ == '__main__':
-    model, feature_channels, output_stride = build_backbone(model_name='resnet18', pretrained=True, return_interm_layers=True)
-    print(model)
-    print(feature_channels)
-    print(output_stride)
+    model, feat_dim = build_resnet(model_name='resnet50-d', pretrained=True)
+    print(feat_dim)
 
-    x = torch.randn(2, 3, 224, 224)
+    x = torch.randn(2, 3, 800, 800)
     y = model(x)
-    for f in y:
-        print(f.size())
+    print(y.size())
