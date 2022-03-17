@@ -11,3 +11,4 @@ python train.py \
         --val_min_size 800 \
         --val_max_size 1333 \
         --schedule 1x \
+        --grad_clip_norm 4.0 \
