@@ -1,15 +1,13 @@
 python train.py \
         --cuda \
         -d coco \
-        -v yolof_r50_C5_1x \
-        --norm BN \
+        --root /mnt/share/ssd2/dataset/ \
+        -v yolof50 \
+        -lr 0.03 \
+        -lr_bk 0.01 \
         --batch_size 16 \
         --train_min_size 800 \
         --train_max_size 1333 \
         --val_min_size 800 \
         --val_max_size 1333 \
-        --lr 0.01 \
-        --lr_backbone 0.01 \
-        --wp_iter 500 \
-        --optimizer sgd \
-        --accumulate 4
+        --schedule 1x \
