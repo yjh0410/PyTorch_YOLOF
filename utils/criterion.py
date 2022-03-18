@@ -102,7 +102,6 @@ class Criterion(nn.Module):
         # rescale tgt boxes
         B = len(targets)
         indices = self.matcher(pred_box_copy, anchor_boxes_copy, targets)
-        pred_cls = pred_cls.reshape(-1, self.num_classes)
         anchor_boxes_copy = box_cxcywh_to_xyxy(anchor_boxes_copy)
         # [M, 4] -> [1, M, 4] -> [B, M, 4]
         anchor_boxes_copy = anchor_boxes_copy[None].repeat(B, 1, 1)
@@ -134,7 +133,7 @@ class Criterion(nn.Module):
         src_idx = torch.cat(
             [src + idx * anchor_boxes_copy[0].shape[0] for idx, (src, _) in
              enumerate(indices)])
-        # [BM, C]
+        # [BM,]
         gt_cls = torch.full(pred_cls.shape[:1],
                                 self.num_classes,
                                 dtype=torch.int64,

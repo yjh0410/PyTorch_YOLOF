@@ -262,7 +262,7 @@ class YOLOF(nn.Module):
             if mask is not None:
                 # [B, H, W]
                 mask = torch.nn.functional.interpolate(mask[None], size=[H, W]).bool()[0]
-                # [B, H, W, KA] -> [B, HW]
+                # [B, H, W] -> [B, HW]
                 mask = mask.flatten(1)
                 # [B, HW] -> [B, HW, KA] -> [BM,], M= HW x KA
                 mask = mask[..., None].repeat(1, 1, self.num_anchors).flatten()
