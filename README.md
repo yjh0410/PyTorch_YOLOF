@@ -22,22 +22,11 @@ We suggest that PyTorch should be higher than 1.9.0 and Torchvision should be hi
 
 # Main results on COCO-val
 
-| Model                                     |  scale     |   mAP   |  FPS  |
-|-------------------------------------------|------------|---------|-------|
-| YOLOF_R_18_C5_1x                          |  800,1333  |         |       |
-| YOLOF_R_50_C5_1x                          |  800,1333  |         |       |
-| YOLOF_R_50_DC5_1x                         |  800,1333  | -       |   -   |
-| YOLOF_R_101_C5_1x                         |  800,1333  | -       |   -   |
-| YOLOF_R_101_DC5_1x                        |  800,1333  | -       |   -   |
-| YOLOF_CSP_D_53_DC5_3x                     |  608,608   |         |       |
-| YOLOF_CSP_D_53_DC5_9x                     |  608,608   | -       |   -   |
+| Model                                     |  scale     |   mAP   |  FPS  | Weight|
+|-------------------------------------------|------------|---------|-------|-------|
+| YOLOF_R_50_C5_1x                          |  800,1333  |         |       |       |
 
-Limited by my computing resources, I can only provide the results and weights of `YOLOF_R_18_C5_1x`, `YOLOF_R_50_C5_1x` and `YOLOF_CSP_D53_DC5_3x`. If you have sufficient computing resources, you can try other backbones. I would be very grateful if you would release your trained weights and results for this project.
-
-# Weight
-- YOLOF_R_18_C5_1x: Coming soon ...
-- YOLOF_R_50_C5_1x: Coming soon ...
-- YOLOF_CSP_D_53_DC5_3x: Coming soon ...
+Limited by my computing resources, I can only provide the results and weights of `YOLOF_R_50_C5_1x`. If you have sufficient computing resources, you can try other backbones, and more details about other YOLOF like `YOLOF_R_50_DC5`, `YOLOF_R_101_C5` and `YOLOF_CSP_D_53_DC_5` have been provided in `config/yolof_config.py`. I would be very grateful if you would release your trained weights and results for this project.
 
 # Train
 ## Single GPU
