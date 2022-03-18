@@ -324,6 +324,7 @@ class CSPDarkNet53(nn.Module):
 
 
     def forward(self, x):
+        output = []
         x = self.backbone["conv1"](x)
         x = self.backbone["bn1"](x)
         x = self.backbone["act1"](x)
