@@ -39,9 +39,9 @@ def parse_args():
                         help='Batch size for training')
     parser.add_argument('--schedule', type=str, default='1x', choices=['1x', '2x', '3x', '9x'],
                         help='training schedule. Attention, 9x is designed for YOLOF53-DC5.')
-    parser.add_argument('-lr', '--base_lr', type=float, default=0.12,
+    parser.add_argument('-lr', '--base_lr', type=float, default=0.03,
                         help='base learning rate')
-    parser.add_argument('-lr_bk', '--backbone_lr', type=float, default=0.04,
+    parser.add_argument('-lr_bk', '--backbone_lr', type=float, default=0.01,
                         help='backbone learning rate')
     parser.add_argument('--num_workers', default=4, type=int, 
                         help='Number of workers used in dataloading')

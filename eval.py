@@ -31,7 +31,7 @@ def parse_args():
                         type=str, help='Trained state_dict file path to open')
     parser.add_argument('--conf_thresh', default=0.05, type=float,
                         help='NMS threshold')
-    parser.add_argument('--nms_thresh', default=0.45, type=float,
+    parser.add_argument('--nms_thresh', default=0.6, type=float,
                         help='NMS threshold')
     parser.add_argument('--topk', default=1000, type=int,
                         help='NMS threshold')

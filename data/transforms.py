@@ -1,5 +1,6 @@
 import random
 import cv2
+import numpy as np
 import torch
 import torchvision.transforms as T
 import torchvision.transforms.functional as F
@@ -32,127 +33,156 @@ class ToTensor(object):
         self.format = format
 
     def __call__(self, image, target=None, mask=None):
-        # to rgb
+        # check color format
         if self.format == 'RGB':
+            # BGR -> RGB
             image = image[..., (2, 1, 0)]
+            # [H, W, C] -> [C, H, W]
+            image = torch.from_numpy(image).permute(2, 0, 1).contiguous().float()
+            image = image / 255.
         elif self.format == 'BGR':
+            # keep BGR format
             image = image
+            # [H, W, C] -> [C, H, W]
+            image = torch.from_numpy(image).permute(2, 0, 1).contiguous().float()
         else:
             print('Unknown color format !!')
             exit()
-        image = F.to_tensor(image)
         if target is not None:
             target["boxes"] = torch.as_tensor(target["boxes"]).float()
             target["labels"] = torch.as_tensor(target["labels"]).long()
+
         return image, target, mask
 
 
 # DistortTransform
 class DistortTransform(object):
     """
-    Distort image.
+    Distort image w.r.t hue, saturation and exposure.
     """
-    def __call__(self, image, target=None, mask=None):
+
+    def __init__(self, hue=0.1, saturation=1.5, exposure=1.5):
+        super().__init__()
+        self.hue = hue
+        self.saturation = saturation
+        self.exposure = exposure
+
+    def __call__(self, image: np.ndarray, target=None, mask=None) -> np.ndarray:
         """
         Args:
-            img (ndarray): of shape HxWxC. The Tensor is floating point in range[0, 255].
+            img (ndarray): of shape HxW, HxWxC, or NxHxWxC. The array can be
+                of type uint8 in range [0, 255], or floating point in range
+                [0, 1] or [0, 255].
 
         Returns:
             ndarray: the distorted image(s).
         """
-        def _convert(image, alpha=1, beta=0):
-            tmp = image.astype(float) * alpha + beta
-            tmp[tmp < 0] = 0
-            tmp[tmp > 255] = 255
-            image[:] = tmp
+        dhue = np.random.uniform(low=-self.hue, high=self.hue)
+        dsat = self._rand_scale(self.saturation)
+        dexp = self._rand_scale(self.exposure)
 
-        image = image.copy()
-
-        _convert(image, beta=random.uniform(-32, 32))
-        _convert(image, alpha=random.uniform(0.5, 1.5))
-        # BGR -> HSV
         image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        tmp = image[:, :, 0].astype(int) + random.randint(-18, 18)
-        tmp %= 180
-        image[:, :, 0] = tmp
-        _convert(image[:, :, 1], alpha=random.uniform(0.5, 1.5))
-        # HSV -> BGR
+        image = np.asarray(image, dtype=np.float32) / 255.
+        image[:, :, 1] *= dsat
+        image[:, :, 2] *= dexp
+        H = image[:, :, 0] + dhue * 179 / 255.
+
+        if dhue > 0:
+            H[H > 1.0] -= 1.0
+        else:
+            H[H < 0.0] += 1.0
+
+        image[:, :, 0] = H
+        image = (image * 255).clip(0, 255).astype(np.uint8)
         image = cv2.cvtColor(image, cv2.COLOR_HSV2BGR)
+        image = np.asarray(image, dtype=np.uint8)
 
         return image, target, mask
 
+    def _rand_scale(self, upper_bound):
+        """
+        Calculate random scaling factor.
 
-# RandomSizeCrop
-class RandomSizeCrop(object):
-    def __init__(self, max_size=800, pixel_mean=(0.485, 0.456, 0.406)):
-        self.min_size = round(max_size * 0.3)
-        self.max_size = max_size
-        self.pixel_mean = torch.tensor(pixel_mean).float()[..., None, None]
+        Args:
+            upper_bound (float): range of the random scale.
+        Returns:
+            random scaling factor (float) whose range is
+            from 1 / s to s .
+        """
+        scale = np.random.uniform(low=1, high=upper_bound)
+        if np.random.rand() > 0.5:
+            return scale
+        return 1 / scale
 
-    def crop(self, image, region, target=None, mask=None):
-        oh, ow = image.shape[1:]
-        cropped_image = torch.ones_like(image) * self.pixel_mean
-        cropped_image_ = F.crop(image, *region)
-        ph, pw = cropped_image_.shape[1:]
 
-        dh, dw = oh - ph, ow - pw
-        pleft = random.randint(0, dw)
-        ptop = random.randint(0, dh)
-        cropped_image[:, ptop:ptop+ph, pleft:pleft+pw] = cropped_image_
+# JitterCrop
+class JitterCrop(object):
+    """Jitter and crop the image and box."""
 
-        target = target.copy()
-        i, j, h, w = region
+    def __init__(self, jitter_ratio):
+        super().__init__()
+        self.jitter_ratio = jitter_ratio
 
-        if "boxes" in target:
-            boxes = target["boxes"]
-            max_size = torch.as_tensor([w, h], dtype=torch.float32)
-            cropped_boxes = boxes - torch.as_tensor([j, i, j, i])
-            cropped_boxes = torch.min(cropped_boxes.reshape(-1, 2, 2), max_size)
-            cropped_boxes = cropped_boxes.clamp(min=0).reshape(-1, 4)
-            # offset
-            cropped_boxes[..., [0, 2]] += pleft
-            cropped_boxes[..., [1, 3]] += ptop
+    def crop(self, image, pleft, pright, ptop, pbot, output_size, mask=None):
+        oh, ow = image.shape[:2]
 
-            # check box
-            valid_box = []
-            if len(cropped_boxes) == 0:
-                valid_box.append([0., 0., 0., 0.])
-            else:
-                for box in cropped_boxes:
-                    x1, y1, x2, y2 = box
-                    bw = x2 - x1
-                    bh = y2 - y1
-                    if bw > 10. and bh > 10.:
-                        valid_box.append([x1, y1, x2, y2])
+        swidth, sheight = output_size
 
-                if len(valid_box) == 0:
-                    valid_box.append([0., 0., 0., 0.])
+        src_rect = [pleft, ptop, swidth + pleft,
+                    sheight + ptop]  # x1,y1,x2,y2
+        img_rect = [0, 0, ow, oh]
+        # rect intersection
+        new_src_rect = [max(src_rect[0], img_rect[0]),
+                        max(src_rect[1], img_rect[1]),
+                        min(src_rect[2], img_rect[2]),
+                        min(src_rect[3], img_rect[3])]
+        dst_rect = [max(0, -pleft),
+                    max(0, -ptop),
+                    max(0, -pleft) + new_src_rect[2] - new_src_rect[0],
+                    max(0, -ptop) + new_src_rect[3] - new_src_rect[1]]
 
-            target["boxes"] = torch.tensor(valid_box).float()
+        # crop the image
+        cropped = np.zeros([sheight, swidth, 3], dtype=image.dtype)
+        cropped[:, :, ] = np.mean(image, axis=(0, 1))
+        cropped[dst_rect[1]:dst_rect[3], dst_rect[0]:dst_rect[2]] = \
+            image[new_src_rect[1]:new_src_rect[3],
+            new_src_rect[0]:new_src_rect[2]]
 
-        if mask is not None:
-            # FIXME should we update the area here if there are no boxes?
-            mask = mask[:, ptop:ptop+ph, pleft:pleft+pw]
-            print(mask)
+        return cropped
 
-        return cropped_image, target, mask
 
     def __call__(self, image, target=None, mask=None):
-        height, width = image.shape[1:]
-        max_size = min(width, self.max_size)
-        if max_size > self.min_size:
-            w = random.randint(self.min_size, min(width, self.max_size))
-        else:
-            w = width
+        oh, ow = image.shape[:2]
+        dw = int(ow * self.jitter_ratio)
+        dh = int(oh * self.jitter_ratio)
+        pleft = np.random.randint(-dw, dw)
+        pright = np.random.randint(-dw, dw)
+        ptop = np.random.randint(-dh, dh)
+        pbot = np.random.randint(-dh, dh)
 
-        max_size = min(height, self.max_size)
-        if max_size > self.min_size:
-            h = random.randint(self.min_size, min(height, self.max_size))
-        else:
-            h = height
+        swidth = ow - pleft - pright
+        sheight = oh - ptop - pbot
+        output_size = (swidth, sheight)
+        # crop image
+        cropped_image = self.crop(image=image,
+                                  pleft=pleft, 
+                                  pright=pright, 
+                                  ptop=ptop, 
+                                  pbot=pbot,
+                                  output_size=output_size)
+        # crop bbox
+        if target is not None:
+            bboxes = target['boxes'].copy()
+            coords_offset = np.array([pleft, ptop], dtype=np.float32)
+            bboxes[..., [0, 2]] = bboxes[..., [0, 2]] - coords_offset[0]
+            bboxes[..., [1, 3]] = bboxes[..., [1, 3]] - coords_offset[1]
+            swidth, sheight = output_size
 
-        region = T.RandomCrop.get_params(image, [h, w])
-        return self.crop(image, region, target, mask)
+            bboxes[..., [0, 2]] = np.clip(bboxes[..., [0, 2]], 0, swidth - 1)
+            bboxes[..., [1, 3]] = np.clip(bboxes[..., [1, 3]], 0, sheight - 1)
+            target['boxes'] = bboxes
+
+        return cropped_image, target, mask
 
 
 # RandomHFlip
@@ -162,11 +192,11 @@ class RandomHorizontalFlip(object):
 
     def __call__(self, image, target=None, mask=None):
         if random.random() < self.p:
-            image = F.hflip(image)
+            image = image[:, ::-1]
             if target is not None:
                 h, w = target["orig_size"]
                 if "boxes" in target:
-                    boxes = target["boxes"].clone()
+                    boxes = target["boxes"].copy()
                     boxes[..., [0, 2]] = w - boxes[..., [2, 0]]
                     target["boxes"] = boxes
 
@@ -195,18 +225,18 @@ class RandomShift(object):
             else:
                 new_y = shift_y
                 orig_y = 0
-            new_image = torch.zeros_like(image)
-            img_h, img_w = image.shape[1:]
+            new_image = np.zeros_like(image)
+            img_h, img_w = image.shape[:-1]
             new_h = img_h - abs(shift_y)
             new_w = img_w - abs(shift_x)
-            new_image[:, new_y:new_y + new_h, new_x:new_x + new_w] = image[:,
+            new_image[new_y:new_y + new_h, new_x:new_x + new_w, :] = image[
                                                                 orig_y:orig_y + new_h,
-                                                                orig_x:orig_x + new_w]
-            boxes_ = target["boxes"].clone()
+                                                                orig_x:orig_x + new_w, :]
+            boxes_ = target["boxes"].copy()
             boxes_[..., [0, 2]] += shift_x
             boxes_[..., [1, 3]] += shift_y
-            boxes_[..., [0, 2]] = boxes_[..., [0, 2]].clamp(0, img_w)
-            boxes_[..., [1, 3]] = boxes_[..., [1, 3]].clamp(0, img_h)
+            boxes_[..., [0, 2]] = boxes_[..., [0, 2]].clip(0, img_w)
+            boxes_[..., [1, 3]] = boxes_[..., [1, 3]].clip(0, img_h)
             target["boxes"] = boxes_
 
             return new_image, target, mask
@@ -302,8 +332,8 @@ class BaseTransforms(object):
         self.random_size =random_size
         self.transforms = Compose([
             DistortTransform(),
-            ToTensor(format=format),
             RandomHorizontalFlip(),
+            ToTensor(format=format),
             Resize(min_size=min_size, 
                    max_size=max_size,
                    random_size=random_size),
@@ -340,15 +370,17 @@ class TrainTransforms(object):
         transform = []
         for t in trans_config:
             if t['name'] == 'DistortTransform':
-                transform.append(DistortTransform())
-            elif t['name'] == 'ToTensor':
-                transform.append(ToTensor(format=self.format))
+                transform.append(DistortTransform(hue=t['hue'], 
+                                                  saturation=t['saturation'], 
+                                                  exposure=t['exposure']))
             elif t['name'] == 'RandomHorizontalFlip':
                 transform.append(RandomHorizontalFlip())
             elif t['name'] == 'RandomShift':
                 transform.append(RandomShift(max_shift=t['max_shift']))
-            elif t['name'] == 'RandomSizeCrop':
-                transform.append(RandomSizeCrop(max_size=self.max_size))
+            elif t['name'] == 'JitterCrop':
+                transform.append(JitterCrop(jitter_ratio=t['jitter_ratio']))
+            elif t['name'] == 'ToTensor':
+                transform.append(ToTensor(format=self.format))
             elif t['name'] == 'Resize':
                 transform.append(Resize(min_size=self.min_size, 
                                         max_size=self.max_size, 

@@ -286,27 +286,43 @@ class COCODataset(Dataset):
 if __name__ == "__main__":
     from transforms import TrainTransforms, ValTransforms, BaseTransforms
 
-    trans_config = [
-            {'name': 'ToTensor'},
-            {'name': 'RandomHorizontalFlip'},
-            {'name': 'RandomShift',
-             'max_shift': 32},
-            {'name': 'Resize'},
-            {'name': 'Normalize'},
-            {'name': 'PadImage'}
-        ]
+    # format = 'BGR'
+    # pixel_mean = [103.53, 116.28, 123.675]
+    # pixel_std = [1.0, 1.0, 1.0]
+
+    format = 'RGB'
+    pixel_mean = [0.485, 0.456, 0.406]
+    pixel_std = [0.229, 0.224, 0.225]
+
+    trans_config = [{'name': 'DistortTransform',
+                     'hue': 0.1,
+                     'saturation': 1.5,
+                     'exposure': 1.5},
+                    {'name': 'RandomHorizontalFlip'},
+                    {'name': 'RandomShift', 'max_shift': 32},
+                    {'name': 'JitterCrop', 'jitter_ratio': 0.3},
+                    {'name': 'ToTensor'},
+                    {'name': 'Resize'},
+                    {'name': 'Normalize'},
+                    {'name': 'PadImage'}]
     min_size = 800
     max_size = int(round(1333 / 800 * min_size))
     random_size = [640, 672, 704, 736, 768, 800]
     transform = TrainTransforms(trans_config=trans_config,
                                 min_size=min_size,
                                 max_size=max_size,
-                                random_size=random_size)
+                                random_size=random_size,
+                                pixel_mean=pixel_mean,
+                                pixel_std=pixel_std,
+                                format=format)
     color_augment = BaseTransforms(min_size=max_size,
                                    max_size=max_size,
-                                   random_size=random_size)
-    pixel_mean = np.array(transform.pixel_mean, dtype=np.float32)
-    pixel_std = np.array(transform.pixel_std, dtype=np.float32)
+                                   random_size=random_size,
+                                   pixel_mean=pixel_mean,
+                                   pixel_std=pixel_std,
+                                   format=format)
+    pixel_mean = np.array(pixel_mean, dtype=np.float32)
+    pixel_std = np.array(pixel_std, dtype=np.float32)
 
     dataset = COCODataset(img_size=max_size,
                           data_dir='E:\\python_work\\object_detection\\dataset\\COCO',
@@ -325,10 +341,15 @@ if __name__ == "__main__":
         image, target, mask = dataset.pull_item(i)
         # to numpy
         image = image.permute(1, 2, 0).numpy()
-        # denormalize
-        image = ((image * pixel_std + pixel_mean)*255).astype(np.uint8)
         # to BGR format
-        image = image[:, :, (2, 1, 0)]
+        if format == 'RGB':
+            # denormalize
+            image = image * pixel_std + pixel_mean
+            image = image * 255
+            image = image[:, :, (2, 1, 0)].astype(np.uint8)
+        elif format == 'BGR':
+            image = image * pixel_std + pixel_mean
+            image = image.astype(np.uint8)
         image = image.copy()
         img_h, img_w = image.shape[:2]
 

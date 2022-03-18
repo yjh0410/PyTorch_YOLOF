@@ -28,16 +28,16 @@ class UniformMatcher(nn.Module):
         """
 
         bs, num_queries = pred_boxes.shape[:2]
-        # [M, 4] -> [1, M, 4] -> [B, M, 4]
-        anchor_boxes = anchor_boxes[None].repeat(bs, 1, 1)
 
         # We flatten to compute the cost matrices in a batch
-        # [batch_size * num_anchors, 4]
+        # [B, num_queries, 4] -> [M, 4]
         out_bbox = pred_boxes.flatten(0, 1)
+        # [num_queries, 4] -> [1, num_queries, 4] -> [B, num_queries, 4] -> [M, 4]
+        anchor_boxes = anchor_boxes[None].repeat(bs, 1, 1)
         anchor_boxes = anchor_boxes.flatten(0, 1)
 
         # Also concat the target boxes
-        tgt_bbox = torch.cat([v['boxes'] for v in targets]).to(out_bbox.device)
+        tgt_bbox = torch.cat([v['boxes'] for v in targets])
 
         # Compute the L1 cost between boxes
         # Note that we use anchors and predict boxes both
@@ -50,9 +50,9 @@ class UniformMatcher(nn.Module):
 
         # Final cost matrix: [B, M, N], M=num_queries, N=num_tgt
         C = cost_bbox
-        C = C.view(bs, num_queries, -1).cpu()
+        C = C.view(bs, num_queries, -1)
         C1 = cost_bbox_anchors
-        C1 = C1.view(bs, num_queries, -1).cpu()
+        C1 = C1.view(bs, num_queries, -1)
 
         sizes = [len(v['boxes']) for v in targets]  # the number of object instances in each image
         all_indices_list = [[] for _ in range(bs)]
