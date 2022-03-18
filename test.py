@@ -143,6 +143,8 @@ def test(args,
         
         # rescale
         bboxes *= orig_size
+        bboxes[..., [0, 2]] = np.clip(bboxes[..., [0, 2]], a_min=0., a_max=w)
+        bboxes[..., [1, 3]] = np.clip(bboxes[..., [1, 3]], a_min=0., a_max=h)
 
         # vis detection
         img_processed = visualize(

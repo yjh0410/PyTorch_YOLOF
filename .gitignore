@@ -1,8 +1,7 @@
 *.pt
 *.pth
 *.pkl
-*.jpg
-*.png
 *.pyc
 __pycache__
+det_results
 .vscode

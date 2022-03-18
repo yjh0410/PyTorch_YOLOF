@@ -24,9 +24,10 @@ We suggest that PyTorch should be higher than 1.9.0 and Torchvision should be hi
 
 | Model                                     |  scale     |   mAP   |  FPS  | Weight|
 |-------------------------------------------|------------|---------|-------|-------|
+| YOLOF_R_18_C5_1x                          |  800,1333  |         |       |       |
 | YOLOF_R_50_C5_1x                          |  800,1333  |         |       |       |
 
-Limited by my computing resources, I can only provide the results and weights of `YOLOF_R_50_C5_1x`. If you have sufficient computing resources, you can try other backbones, and more details about other YOLOF like `YOLOF_R_50_DC5`, `YOLOF_R_101_C5` and `YOLOF_CSP_D_53_DC_5` have been provided in `config/yolof_config.py`. I would be very grateful if you would release your trained weights and results for this project.
+Limited by my computing resources, I can only provide the results and weights of `YOLOF_R_18_C5_1x` and `YOLOF_R_50_C5_1x`. If you have sufficient computing resources, you can try other backbones, and more details about other YOLOF like `YOLOF_R_50_DC5`, `YOLOF_R_101_C5` and `YOLOF_CSP_D_53_DC_5` have been provided in `config/yolof_config.py`. I would be very grateful if you would release your trained weights and results for this project.
 
 # Train
 ## Single GPU
@@ -43,7 +44,7 @@ sh train_ddp.sh
 
 You can change the configurations of `train_ddp.sh`, according to your own situation.
 
-## Test
+# Test
 ```Shell
 python test.py -d coco \
                --cuda \
@@ -52,5 +53,41 @@ python test.py -d coco \
                --min_size 800 \
                --max_size 1333 \
                --root path/to/dataset/ \
+               --show
+```
+
+# Demo
+I have provide some images in `data/demo/images/`, so you can run following command to run a demo:
+
+```Shell
+python demo.py --mode image \
+               --path_to_img data/demo/images/ \
+               -v yolof50 \
+               --cuda \
+               --weight path/to/weight \
+               --img_size 928 \
+               --show
+```
+
+If you want run a demo of streaming video detection, you need to set `--mode` to `video`, and give the path to video `--path_to_vid`。
+
+```Shell
+python demo.py --mode video \
+               --path_to_img data/demo/videos/your_video \
+               -v yolof50 \
+               --cuda \
+               --weight path/to/weight \
+               --img_size 928 \
+               --show
+```
+
+If you want run video detection with your camera, you need to set `--mode` to `camera`。
+
+```Shell
+python demo.py --mode camera \
+               -v yolof50 \
+               --cuda \
+               --weight path/to/weight \
+               --img_size 928 \
                --show
 ```
