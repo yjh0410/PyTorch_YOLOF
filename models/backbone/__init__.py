@@ -1,5 +1,4 @@
 from .resnet import build_resnet
-from .cspdarknet import build_cspdarknet
 from .convnext import build_convnext
 
 
@@ -15,11 +14,6 @@ def build_backbone(model_name='resnet50-d',
         model, feat_dim = build_resnet(model_name=model_name, 
                                        pretrained=pretrained,
                                        norm_type=norm_type)
-
-    elif 'cspdarknet' in model_name:
-        model, feat_dim = build_cspdarknet(model_name=model_name, 
-                                           pretrained=pretrained,
-                                           norm_type=norm_type)
 
     elif 'convnext' in model_name:
         if model_name[-1] == 'd':

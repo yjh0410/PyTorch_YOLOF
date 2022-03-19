@@ -29,9 +29,8 @@ We suggest that PyTorch should be higher than 1.9.0 and Torchvision should be hi
 | YOLOF_R_50_DC5_1x                           |  800,1333  |         |       |       |
 | YOLOF_R_101_C5_1x                           |  800,1333  |         |       |       |
 | YOLOF_R_101_DC5_1x                          |  800,1333  |         |       |       |
-| YOLOF_CSP_D_53_DC5_3x                       |  800,1333  |         |       |       |
-| YOLOF_CSP_D_53_DC5_9x                       |  800,1333  |         |       |       |
-
+| YOLOF_R_50_DC5_640_3x                       |  640,640   |         |       |       |
+| YOLOF_R_50_DC5_640_3x_Mosaic                |  640,640   |         |       |       |
 
 # Train
 ## Single GPU
