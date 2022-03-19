@@ -69,7 +69,8 @@ python demo.py --mode image \
                -v yolof50 \
                --cuda \
                --weight path/to/weight \
-               --img_size 928 \
+               --min_size 800 \
+               --max_size 1333 \
                --show
 ```
 
@@ -81,7 +82,8 @@ python demo.py --mode video \
                -v yolof50 \
                --cuda \
                --weight path/to/weight \
-               --img_size 928 \
+               --min_size 800 \
+               --max_size 1333 \
                --show
 ```
 
@@ -92,6 +94,7 @@ python demo.py --mode camera \
                -v yolof50 \
                --cuda \
                --weight path/to/weight \
-               --img_size 928 \
+               --min_size 800 \
+               --max_size 1333 \
                --show
 ```
