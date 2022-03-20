@@ -192,13 +192,12 @@ class YOLOF(nn.Module):
         cls_pred, reg_pred = self.head(x)
 
         # decode box
-        t0 = time.time()
         anchor_boxes = self.generate_anchors(fmp_size=[H, W]) # [M, 4]
-        print(time.time() - t0)
         # scores
         scores, labels = torch.max(cls_pred.sigmoid(), dim=-1)
 
         # topk
+        t0 = time.time()
         if scores.shape[0] > self.topk:
             scores, indices = torch.topk(scores, self.topk)
             labels = labels[indices]
@@ -240,6 +239,7 @@ class YOLOF(nn.Module):
         bboxes[..., [1, 3]] /= img_h
         bboxes = bboxes.clip(0., 1.)
 
+        print(time.time() - t0)
         return bboxes, scores, labels
 
 
