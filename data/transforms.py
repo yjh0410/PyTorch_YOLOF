@@ -414,7 +414,8 @@ class ValTransforms(object):
         self.transforms = Compose([
             ToTensor(),
             Resize(min_size=min_size, max_size=max_size),
-            Normalize(pixel_mean, pixel_std)
+            Normalize(pixel_mean, pixel_std),
+            PadImage(max_size=max_size)
         ])
 
 
