@@ -142,12 +142,6 @@ def train():
     print('==============================')
     print('Model Configuration: \n', cfg)
 
-    # multi scale trick
-    multi_scale = None
-    if cfg['epoch'][args.schedule]['multi_scale'] is not None:
-        multi_scale = cfg['epoch'][args.schedule]['multi_scale']
-        print('Multi scale training: {}'. format(multi_scale))
-
     # dataset and evaluator
     dataset, evaluator, num_classes = build_dataset(cfg, args, device)
 
@@ -336,6 +330,7 @@ def build_dataset(cfg, args, device):
     train_transform = TrainTransforms(trans_config=trans_config,
                                       min_size=args.train_min_size,
                                       max_size=args.train_max_size,
+                                      random_size=cfg['epoch'][args.schedule]['multi_scale'],
                                       pixel_mean=cfg['pixel_mean'],
                                       pixel_std=cfg['pixel_std'],
                                       format=cfg['format'])
@@ -344,8 +339,9 @@ def build_dataset(cfg, args, device):
                                   pixel_mean=cfg['pixel_mean'],
                                   pixel_std=cfg['pixel_std'],
                                   format=cfg['format'])
-    color_augment = BaseTransforms(min_size=args.train_max_size,
+    color_augment = BaseTransforms(min_size=args.train_min_size,
                                    max_size=args.train_max_size,
+                                   random_size=cfg['epoch'][args.schedule]['multi_scale'],
                                    pixel_mean=cfg['pixel_mean'],
                                    pixel_std=cfg['pixel_std'],
                                    format=cfg['format'])

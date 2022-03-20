@@ -323,7 +323,6 @@ class BaseTransforms(object):
                  pixel_mean=(0.485, 0.456, 0.406), 
                  pixel_std=(0.229, 0.224, 0.225),
                  format='RGB'):
-        assert min_size == max_size
         self.min_size = min_size
         self.max_size = max_size
         self.pixel_mean = pixel_mean
