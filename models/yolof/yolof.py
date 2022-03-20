@@ -78,8 +78,9 @@ class YOLOF(nn.Module):
             # [HW, KA, 4] -> [M, 4]
             anchor_boxes = np.concatenate([anchor_xy, anchor_wh], axis=-1)
             anchor_boxes = anchor_boxes.reshape(-1, 4)
+            anchor_boxes = torch.from_numpy(anchor_boxes).float().to(self.device)
             
-            self.anchor_boxes = torch.from_numpy(anchor_boxes).float().to(self.device)
+            self.anchor_boxes = anchor_boxes
             self.fmp_size = fmp_size
 
             return anchor_boxes
