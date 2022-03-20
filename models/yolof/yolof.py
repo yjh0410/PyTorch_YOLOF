@@ -184,6 +184,7 @@ class YOLOF(nn.Module):
         # backbone
         t0 = time.time()
         x = self.backbone(x)
+        print(time.time() - t0)
 
         # neck
         x = self.neck(x)
@@ -239,7 +240,6 @@ class YOLOF(nn.Module):
         bboxes[..., [1, 3]] /= img_h
         bboxes = bboxes.clip(0., 1.)
 
-        print(time.time() - t0)
         return bboxes, scores, labels
 
 
