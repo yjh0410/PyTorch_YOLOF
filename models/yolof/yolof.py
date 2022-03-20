@@ -29,7 +29,7 @@ class YOLOF(nn.Module):
         self.conf_thresh = conf_thresh
         self.nms_thresh = nms_thresh
         self.topk = topk
-        self.anchor_size = torch.as_tensor(cfg['anchor_size'])
+        self.anchor_size = np.array(cfg['anchor_size'])
         self.num_anchors = len(cfg['anchor_size'])
 
         # backbone
@@ -61,23 +61,25 @@ class YOLOF(nn.Module):
         if self.fmp_size is not None and self.fmp_size == fmp_size:
             return self.anchor_boxes
         else:
+
+
             # generate grid cells
             fmp_h, fmp_w = fmp_size
-            anchor_y, anchor_x = torch.meshgrid([torch.arange(fmp_h), torch.arange(fmp_w)])
+            anchor_x, anchor_y = np.meshgrid(np.arange(fmp_w), np.arange(fmp_h))
             # [H, W, 2] -> [HW, 2]
-            anchor_xy = torch.stack([anchor_x, anchor_y], dim=-1).float().view(-1, 2) + 0.5
+            anchor_xy = np.stack([anchor_x, anchor_y], axis=-1).reshape(-1, 2) + 0.5
             # [HW, 2] -> [HW, 1, 2] -> [HW, KA, 2] 
-            anchor_xy = anchor_xy[:, None, :].repeat(1, self.num_anchors, 1).to(self.device)
+            anchor_xy = np.repeat(anchor_xy[:, None, :], self.num_anchors, axis=1)
             anchor_xy *= self.stride
 
             # [KA, 2] -> [1, KA, 2] -> [HW, KA, 2]
-            anchor_wh = self.anchor_size[None, :, :].repeat(fmp_h*fmp_w, 1, 1).to(self.device)
+            anchor_wh = np.repeat(self.anchor_size[None], fmp_h*fmp_w, axis=0)
 
             # [HW, KA, 4] -> [M, 4]
-            anchor_boxes = torch.cat([anchor_xy, anchor_wh], dim=-1)
-            anchor_boxes = anchor_boxes.view(-1, 4)
-
-            self.anchor_boxes = anchor_boxes
+            anchor_boxes = np.concatenate([anchor_xy, anchor_wh], axis=-1)
+            anchor_boxes = anchor_boxes.reshape(-1, 4)
+            
+            self.anchor_boxes = torch.from_numpy(anchor_boxes).float().to(self.device)
             self.fmp_size = fmp_size
 
             return anchor_boxes
