@@ -68,8 +68,7 @@ def parse_args():
 
     # model
     parser.add_argument('-v', '--version', default='yolof50', choices=['yolof18', 'yolof50', 'yolof50-DC5', \
-                                                                       'yolof101', 'yolof101-DC5', 'yolof53-DC5', \
-                                                                       'yoloft-DC5', 'yolofs-DC5', 'yolofb-DC5', 'yolofl-DC5', 'yolofx-DC5'],
+                                                                       'yolof101', 'yolof101-DC5', 'yolof50-DC5-640'],
                         help='build yolof')
     parser.add_argument('--conf_thresh', default=0.05, type=float,
                         help='NMS threshold')
