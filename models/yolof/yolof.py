@@ -182,6 +182,7 @@ class YOLOF(nn.Module):
     def inference_single_image(self, x):
         img_h, img_w = x.shape[2:]
         # backbone
+        t0 = time.time()
         x = self.backbone(x)
 
         # neck
@@ -197,7 +198,6 @@ class YOLOF(nn.Module):
         scores, labels = torch.max(cls_pred.sigmoid(), dim=-1)
 
         # topk
-        t0 = time.time()
         if scores.shape[0] > self.topk:
             scores, indices = torch.topk(scores, self.topk)
             labels = labels[indices]
