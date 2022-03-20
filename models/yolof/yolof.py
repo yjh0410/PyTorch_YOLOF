@@ -182,9 +182,7 @@ class YOLOF(nn.Module):
     def inference_single_image(self, x):
         img_h, img_w = x.shape[2:]
         # backbone
-        t0 = time.time()
         x = self.backbone(x)
-        print(time.time() - t0)
 
         # neck
         x = self.neck(x)
