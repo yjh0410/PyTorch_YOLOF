@@ -29,7 +29,10 @@ We suggest that PyTorch should be higher than 1.9.0 and Torchvision should be hi
 | YOLOF_R_50_DC5_1x                           |  800,1333  |         |       |
 | YOLOF_R_101_C5_1x                           |  800,1333  |         |       |
 | YOLOF_R_101_DC5_1x                          |  800,1333  |         |       |
-| YOLOF_R_50_DC5_640_3x                       |  640,640   |         |       |
+| YOLOF_R_50_DC5_640_3x                       |  640,640   |  37.7   | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof_R_50_DC5_640_3x_37.7.pth) |
+
+Limited by my computing resources, I cannot provide other weights files of `YOLOF_R_50_DC5_1x`, `YOLOF_R_101_C5_1x`and `YOLOF_R_101_DC5_1x`.
+I would be very grateful if you used this project to train the above models and would like to open source the weights files.
 
 # Train
 ## Single GPU

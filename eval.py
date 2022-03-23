@@ -25,8 +25,8 @@ def parse_args():
                         help='Use cuda')
     # model
     parser.add_argument('-v', '--version', default='yolof50', choices=['yolof18', 'yolof50', 'yolof50-DC5', \
-                                                                       'yolof101', 'yolof101-DC5', 'yolof53', 'yolof53-DC5'],
-                        help='build YOLOF')
+                                                                       'yolof101', 'yolof101-DC5', 'yolof50-DC5-640'],
+                        help='build yolof')
     parser.add_argument('--weight', default='weight/',
                         type=str, help='Trained state_dict file path to open')
     parser.add_argument('--conf_thresh', default=0.05, type=float,
