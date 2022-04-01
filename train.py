@@ -227,7 +227,7 @@ def train():
             masks = masks.to(device)
 
             # inference
-            outputs = model_without_ddp(images, mask=masks)
+            outputs = model(images, mask=masks)
 
             # compute loss
             cls_loss, reg_loss, total_loss = criterion(outputs = outputs,
@@ -249,9 +249,9 @@ def train():
             # Backward and Optimize
             total_loss.backward()
             if args.grad_clip_norm > 0.:
-                total_norm = torch.nn.utils.clip_grad_norm_(model_without_ddp.parameters(), args.grad_clip_norm)
+                total_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip_norm)
             else:
-                total_norm = get_total_grad_norm(model_without_ddp.parameters())
+                total_norm = get_total_grad_norm(model.parameters())
             optimizer.step()
             optimizer.zero_grad()
 

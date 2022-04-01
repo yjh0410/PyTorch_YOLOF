@@ -8,7 +8,7 @@ python -m torch.distributed.run --nproc_per_node=2 train.py \
                                                     -v yolof50 \
                                                     -lr 0.03 \
                                                     -lr_bk 0.01 \
-                                                    --batch_size 8 \  # total bs = bs * num_gpu
+                                                    --batch_size 8 \
                                                     --train_min_size 800 \
                                                     --train_max_size 1333 \
                                                     --val_min_size 800 \
