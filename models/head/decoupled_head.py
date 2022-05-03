@@ -1,7 +1,10 @@
+import math
 import torch
 import torch.nn as nn
 
 from ..basic.conv import Conv
+
+DEFAULT_EXP_CLAMP = math.log(1e8)
 
 
 class NaiveHead(nn.Module):
@@ -109,9 +112,11 @@ class DecoupledHead(nn.Module):
         B, _, H, W = obj_pred.size()
         obj_pred = obj_pred.view(B, -1, 1, H, W)
         cls_pred = cls_pred.view(B, -1, self.num_classes, H, W)
+
         normalized_cls_pred = cls_pred + obj_pred - torch.log(
-            1. + torch.clamp(cls_pred.exp(), max=1e8) + torch.clamp(
-                obj_pred.exp(), max=1e8))
+                1. + 
+                torch.clamp(cls_pred, max=DEFAULT_EXP_CLAMP).exp() + 
+                torch.clamp(obj_pred, max=DEFAULT_EXP_CLAMP).exp())
         # [B, KA, C, H, W] -> [B, H, W, KA, C] -> [B, M, C], M = HxWxKA
         normalized_cls_pred = normalized_cls_pred.permute(0, 3, 4, 1, 2).contiguous()
         normalized_cls_pred = normalized_cls_pred.view(B, -1, self.num_classes)
