@@ -4,7 +4,6 @@ import os
 import time
 import numpy as np
 import torch
-import torch.backends.cudnn as cudnn
 
 from config.yolof_config import yolof_config
 from data.voc import VOC_CLASSES, VOCDetection
@@ -169,7 +168,6 @@ if __name__ == '__main__':
     # cuda
     if args.cuda:
         print('use cuda')
-        cudnn.benchmark = True
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")

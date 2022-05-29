@@ -85,7 +85,6 @@ if __name__ == '__main__':
     # cuda
     if args.cuda:
         print('use cuda')
-        torch.backends.cudnn.benchmark = True
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
