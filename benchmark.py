@@ -43,10 +43,11 @@ parser.add_argument('--cuda', action='store_true', default=False,
 args = parser.parse_args()
 
 
-def test(net, device, img_size, testset, transform):
+def test(args, net, device, testset, transform):
     # Step-1: Compute FLOPs and Params
     FLOPs_and_Params(model=net, 
-                     img_size=img_size, 
+                     min_size=args.min_size,
+                     max_size=args.max_size, 
                      device=device)
 
     # Step-2: Compute FPS
@@ -139,7 +140,6 @@ if __name__ == '__main__':
 
     # run
     test(net=model, 
-        img_size=args.img_size,
         device=device, 
         testset=dataset,
         transform=transform
