@@ -105,8 +105,7 @@ if __name__ == '__main__':
     num_classes = 80
     dataset = COCODataset(
                 data_dir=data_dir,
-                image_set='val2017',
-                img_size=args.img_size)
+                image_set='val2017')
 
     # YOLOF Config
     cfg = yolof_config[args.version]
