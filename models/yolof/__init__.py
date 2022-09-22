@@ -8,21 +8,33 @@ def build_model(args,
                 device, 
                 num_classes=80, 
                 trainable=False, 
-                coco_pretrained=None):
+                pretrained=None,
+                eval_mode=False):
     print('==============================')
     print('Build {} ...'.format(args.version.upper()))
+
+    if trainable:
+        conf_thresh = cfg['conf_thresh_val']
+        nms_thresh = cfg['nms_thresh']
+    else:
+        if eval_mode:
+            conf_thresh = cfg['conf_thresh_val']
+        else:
+            conf_thresh = cfg['conf_thresh']
+            nms_thresh = cfg['nms_thresh']
+
     model = YOLOF(cfg=cfg,
                   device=device, 
                   num_classes=num_classes, 
                   trainable=trainable,
-                  conf_thresh=args.conf_thresh,
-                  nms_thresh=args.nms_thresh,
+                  conf_thresh=conf_thresh,
+                  nms_thresh=nms_thresh,
                   topk=args.topk)
 
-    # Load COCO pretrained weight
-    if coco_pretrained is not None:
-        print('Loading COCO pretrained weight ...')
-        checkpoint = torch.load(coco_pretrained, map_location='cpu')
+    # Load pretrained weight
+    if pretrained is not None:
+        print('Loading pretrained weight ...')
+        checkpoint = torch.load(pretrained, map_location='cpu')
         # checkpoint state dict
         checkpoint_state_dict = checkpoint.pop("model")
         # model state dict

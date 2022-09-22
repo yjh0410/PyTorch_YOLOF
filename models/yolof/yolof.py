@@ -33,9 +33,11 @@ class YOLOF(nn.Module):
         self.num_anchors = len(cfg['anchor_size'])
 
         # backbone
-        self.backbone, bk_dim = build_backbone(model_name=cfg['backbone'], 
-                                               pretrained=trainable,
-                                               norm_type=cfg['norm_type'])
+        self.backbone, bk_dim = build_backbone(
+            model_name=cfg['backbone'], 
+            pretrained=trainable,
+            norm_type=cfg['norm_type'],
+            res5_dilation=cfg['res5_dilation'])
 
         # neck
         self.neck = build_neck(cfg=cfg, 

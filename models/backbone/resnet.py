@@ -89,23 +89,17 @@ class Backbone(BackboneBase):
         super().__init__(backbone, num_channels)
 
 
-def build_resnet(model_name='resnet18', pretrained=False, norm_type='BN'):
-    if model_name in ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnext101_32x8d']:
-        backbone = Backbone(model_name, 
-                            pretrained, 
-                            dilation=False,
-                            norm_type=norm_type)
-    elif model_name in ['resnet50-d', 'resnet101-d']:
-        backbone = Backbone(model_name[:-2], 
-                            pretrained, 
-                            dilation=True,
-                            norm_type=norm_type)
+def build_resnet(model_name='resnet18', pretrained=False, norm_type='BN', res5_dilation=False):
+    backbone = Backbone(model_name, 
+                        pretrained, 
+                        dilation=res5_dilation,
+                        norm_type=norm_type)
 
     return backbone, backbone.num_channels
 
 
 if __name__ == '__main__':
-    model, feat_dim = build_resnet(model_name='resnet50-d', pretrained=False)
+    model, feat_dim = build_resnet(model_name='resnet50', pretrained=False, res5_dilation=False)
     print(feat_dim)
 
     x = torch.randn(2, 3, 800, 800)

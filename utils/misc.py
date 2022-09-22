@@ -87,19 +87,19 @@ def build_dataset(cfg, args, device):
     print('==============================')
     print('TrainTransforms: {}'.format(trans_config))
     train_transform = TrainTransforms(trans_config=trans_config,
-                                      min_size=args.train_min_size,
-                                      max_size=args.train_max_size,
+                                      min_size=cfg['train_min_size'],
+                                      max_size=cfg['train_max_size'],
                                       random_size=cfg['epoch'][args.schedule]['multi_scale'],
                                       pixel_mean=cfg['pixel_mean'],
                                       pixel_std=cfg['pixel_std'],
                                       format=cfg['format'])
-    val_transform = ValTransforms(min_size=args.val_min_size,
-                                  max_size=args.val_max_size,
+    val_transform = ValTransforms(min_size=cfg['test_min_size'],
+                                  max_size=cfg['test_max_size'],
                                   pixel_mean=cfg['pixel_mean'],
                                   pixel_std=cfg['pixel_std'],
                                   format=cfg['format'])
-    color_augment = BaseTransforms(min_size=args.train_min_size,
-                                   max_size=args.train_max_size,
+    color_augment = BaseTransforms(min_size=cfg['train_min_size'],
+                                   max_size=cfg['train_max_size'],
                                    random_size=cfg['epoch'][args.schedule]['multi_scale'],
                                    pixel_mean=cfg['pixel_mean'],
                                    pixel_std=cfg['pixel_std'],
@@ -110,7 +110,7 @@ def build_dataset(cfg, args, device):
         data_dir = os.path.join(args.root, 'VOCdevkit')
         num_classes = 20
         # dataset
-        dataset = VOCDetection(img_size=args.train_max_size,
+        dataset = VOCDetection(img_size=cfg['train_max_size'],
                                data_dir=data_dir, 
                                transform=train_transform,
                                color_augment=color_augment,
@@ -124,7 +124,7 @@ def build_dataset(cfg, args, device):
         data_dir = os.path.join(args.root, 'COCO')
         num_classes = 80
         # dataset
-        dataset = COCODataset(img_size=args.train_max_size,
+        dataset = COCODataset(img_size=cfg['train_max_size'],
                               data_dir=data_dir,
                               image_set='train2017',
                               transform=train_transform,

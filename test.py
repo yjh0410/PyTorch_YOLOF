@@ -114,7 +114,6 @@ def test(args,
          class_names=None, 
          class_indexs=None, 
          show=False,
-         test_aug=None, 
          dataset_name='coco'):
     num_images = len(dataset)
     save_path = os.path.join('det_results/', args.dataset, args.version)
@@ -133,11 +132,7 @@ def test(args,
 
         t0 = time.time()
         # inference
-        if test_aug is not None:
-            # test augmentation:
-            bboxes, scores, cls_inds = test_aug(x, net)
-        else:
-            bboxes, scores, cls_inds = net(x)
+        bboxes, scores, cls_inds = net(x)
         print("detection time used ", time.time() - t0, "s")
         
         # rescale
@@ -218,15 +213,14 @@ if __name__ == '__main__':
     model = model.to(device).eval()
     print('Finished loading model!')
 
-    # TTA
-    test_aug = TestTimeAugmentation(num_classes=num_classes) if args.test_aug else None
-
     # transform
-    transform = ValTransforms(min_size=args.min_size, 
-                              max_size=args.max_size,
-                              pixel_mean=cfg['pixel_mean'],
-                              pixel_std=cfg['pixel_std'],
-                              format=cfg['format'])
+    transform = ValTransforms(
+        test_min_size=cfg['test_min_size'],
+        max_size=cfg['test_max_size'],
+        pixel_mean=cfg['pixel_mean'],
+        pixel_std=cfg['pixel_std'],
+        ormat=cfg['format']
+        )
 
     # run
     test(args=args,
@@ -239,5 +233,4 @@ if __name__ == '__main__':
         class_names=class_names,
         class_indexs=class_indexs,
         show=args.show,
-        test_aug=test_aug,
         dataset_name=args.dataset)
