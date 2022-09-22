@@ -3,8 +3,6 @@ python train.py \
         -d coco \
         --root /mnt/share/ssd2/dataset/ \
         -v yolof18 \
-        -lr 0.03 \
-        -lr_bk 0.01 \
         --batch_size 16 \
         --train_min_size 800 \
         --train_max_size 1333 \
