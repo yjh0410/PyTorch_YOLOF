@@ -76,8 +76,8 @@ class COCODataset(Dataset):
 
 
     def __getitem__(self, index):
-        image, target, mask = self.pull_item(index)
-        return image, target, mask
+        image, target = self.pull_item(index)
+        return image, target
 
 
     def load_image_target(self, index):
@@ -233,16 +233,16 @@ class COCODataset(Dataset):
         if self.mosaic and np.random.randint(2):
             image, target = self.load_mosaic(index)
             # augment
-            image, target, mask = self.color_augment(image, target)
+            image, target = self.color_augment(image, target)
 
         # load an image and target
         else:
             img_id = self.ids[index]
             image, target = self.load_image_target(img_id)
             # augment
-            image, target, mask = self.transform(image, target)
+            image, target = self.transform(image, target)
             
-        return image, target, mask
+        return image, target
 
 
     def pull_image(self, index):
@@ -291,8 +291,8 @@ if __name__ == "__main__":
     # pixel_std = [1.0, 1.0, 1.0]
 
     format = 'RGB'
-    pixel_mean = [0.485, 0.456, 0.406]
-    pixel_std = [0.229, 0.224, 0.225]
+    pixel_mean = [123.675, 116.28, 103.53]
+    pixel_std = [58.395, 57.12, 57.375]
 
     trans_config = [{'name': 'DistortTransform',
                      'hue': 0.1,
@@ -303,11 +303,10 @@ if __name__ == "__main__":
                     {'name': 'JitterCrop', 'jitter_ratio': 0.3},
                     {'name': 'ToTensor'},
                     {'name': 'Resize'},
-                    {'name': 'Normalize'},
-                    {'name': 'PadImage'}]
+                    {'name': 'Normalize'}]
     min_size = 800
-    max_size = int(round(1333 / 800 * min_size))
-    random_size = [640, 672, 704, 736, 768, 800]
+    max_size = 1333
+    random_size = [400, 600, 800]
     transform = TrainTransforms(trans_config=trans_config,
                                 min_size=min_size,
                                 max_size=max_size,
@@ -325,7 +324,7 @@ if __name__ == "__main__":
     pixel_std = np.array(pixel_std, dtype=np.float32)
 
     dataset = COCODataset(img_size=max_size,
-                          data_dir='E:\\python_work\\object_detection\\dataset\\COCO',
+                          data_dir='/mnt/share/ssd2/dataset/COCO',
                           image_set='train2017',
                           transform=transform,
                           color_augment=color_augment,
@@ -338,14 +337,13 @@ if __name__ == "__main__":
     print('Data length: ', len(dataset))
 
     for i in range(1000):
-        image, target, mask = dataset.pull_item(i)
+        image, target = dataset.pull_item(i)
         # to numpy
         image = image.permute(1, 2, 0).numpy()
         # to BGR format
         if format == 'RGB':
             # denormalize
             image = image * pixel_std + pixel_mean
-            image = image * 255
             image = image[:, :, (2, 1, 0)].astype(np.uint8)
         elif format == 'BGR':
             image = image * pixel_std + pixel_mean
@@ -380,5 +378,5 @@ if __name__ == "__main__":
                 x1, y1, x2, y2 = box
                 cv2.rectangle(mask, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
 
-            cv2.imshow('mask', mask)
+            cv2.imshow('mask')
             cv2.waitKey(0)

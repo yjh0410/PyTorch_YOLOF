@@ -3,31 +3,23 @@ from __future__ import division
 import os
 import argparse
 import time
-import random
+from copy import deepcopy
 
 import torch
-import torch.nn.functional as F
-import torch.optim as optim
-import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from data.voc import VOCDetection
-from data.coco import COCODataset
-from config.yolof_config import yolof_config
-from data.transforms import TrainTransforms, ValTransforms, BaseTransforms
-
 from utils import distributed_utils
-from utils.criterion import build_criterion
 from utils.com_flops_params import FLOPs_and_Params
-from utils.misc import CollateFunc, get_total_grad_norm
+from utils.misc import CollateFunc, get_total_grad_norm, vis_data
+from utils.misc import build_dataset, build_dataloader
 from utils.solver.optimizer import build_optimizer
 from utils.solver.warmup_schedule import build_warmup
 
-from evaluator.coco_evaluator import COCOAPIEvaluator
-from evaluator.voc_evaluator import VOCAPIEvaluator
-
 from models.yolof import build_model
+from models.yolof.criterion import build_criterion
+
+from config.yolof_config import yolof_config
 
 
 def parse_args():
@@ -35,7 +27,7 @@ def parse_args():
     # basic
     parser.add_argument('--cuda', action='store_true', default=False,
                         help='use cuda.')
-    parser.add_argument('--batch_size', default=16, type=int, 
+    parser.add_argument('-bs', '--batch_size', default=16, type=int, 
                         help='Batch size for training')
     parser.add_argument('--schedule', type=str, default='1x', choices=['1x', '2x', '3x', '9x'],
                         help='training schedule. Attention, 9x is designed for YOLOF53-DC5.')
@@ -55,6 +47,8 @@ def parse_args():
                         help='use tensorboard')
     parser.add_argument('--save_folder', default='weights/', type=str, 
                         help='path to save weight')
+    parser.add_argument('--vis', dest="vis", action="store_true", default=False,
+                        help="visualize input data.")
 
     # input image size               
     parser.add_argument('--train_min_size', type=int, default=800,
@@ -131,7 +125,6 @@ def train():
     # cuda
     if args.cuda:
         print('use cuda')
-        cudnn.benchmark = True
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
@@ -151,15 +144,16 @@ def train():
     criterion = build_criterion(args=args, device=device, cfg=cfg, num_classes=num_classes)
     
     # build model
-    net = build_model(args=args, 
-                      cfg=cfg,
-                      device=device, 
-                      num_classes=num_classes, 
-                      trainable=True,
-                      coco_pretrained=args.coco_pretrained)
-    model = net
+    model = build_model(
+        args=args, 
+        cfg=cfg,
+        device=device, 
+        num_classes=num_classes, 
+        trainable=True
+        )
     model = model.to(device).train()
 
+    # DDP
     model_without_ddp = model
     if args.distributed:
         model = DDP(model, device_ids=[args.gpu])
@@ -167,14 +161,13 @@ def train():
 
     # compute FLOPs and Params
     if distributed_utils.is_main_process:
-        model_without_ddp.trainable = False
-        model_without_ddp.eval()
-        FLOPs_and_Params(model=model_without_ddp, 
+        model_copy = deepcopy(model_without_ddp)
+        FLOPs_and_Params(model=model_copy, 
                          min_size=args.train_min_size, 
                          max_size=args.train_max_size, 
                          device=device)
-        model_without_ddp.trainable = True
-        model_without_ddp.train()
+        del model_copy
+
     if args.distributed:
         # wait for all processes to synchronize
         dist.barrier()
@@ -199,7 +192,7 @@ def train():
 
     # training configuration
     max_epoch = cfg['epoch'][args.schedule]['max_epoch']
-    epoch_size = len(dataset) // (args.batch_size * args.num_gpu)
+    epoch_size = len(dataloader)
     best_map = -1.
     warmup = not args.no_warmup
 
@@ -226,28 +219,27 @@ def train():
             images = images.to(device)
             masks = masks.to(device)
 
+            # visualize input data
+            if args.vis:
+                vis_data(images, targets, masks)
+                continue
+
             # inference
             outputs = model(images, mask=masks)
 
             # compute loss
-            cls_loss, reg_loss, total_loss = criterion(outputs = outputs,
-                                                       targets = targets,
-                                                       anchor_boxes = model_without_ddp.anchor_boxes)
+            loss_dict = criterion(outputs, targets)
+            losses = loss_dict['total_loss']
             
-            loss_dict = dict(
-                cls_loss=cls_loss,
-                reg_loss=reg_loss,
-                total_loss=total_loss
-            )
             loss_dict_reduced = distributed_utils.reduce_dict(loss_dict)
 
             # check loss
-            if torch.isnan(total_loss):
+            if torch.isnan(losses):
                 print('loss is NAN !!')
                 continue
 
             # Backward and Optimize
-            total_loss.backward()
+            losses.backward()
             if args.grad_clip_norm > 0.:
                 total_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip_norm)
             else:
@@ -260,33 +252,39 @@ def train():
                 t1 = time.time()
                 cur_lr = [param_group['lr']  for param_group in optimizer.param_groups]
                 cur_lr_dict = {'lr': cur_lr[0], 'lr_bk': cur_lr[1]}
-                print('[Epoch %d/%d][Iter %d/%d][lr: %.6f][lr_bk: %.6f][Loss: cls %.2f || reg %.2f || gnorm: %.2f || size [%d, %d] || time: %.2f]'
-                        % (epoch+1, 
-                           max_epoch, 
-                           iter_i, 
-                           epoch_size, 
-                           cur_lr_dict['lr'],
-                           cur_lr_dict['lr_bk'],
-                           loss_dict_reduced['cls_loss'].item(), 
-                           loss_dict_reduced['reg_loss'].item(), 
-                           total_norm,
-                           args.train_min_size, args.train_max_size, 
-                           t1-t0),
-                        flush=True)
+                # basic infor
+                log =  '[Epoch: {}/{}]'.format(epoch+1, max_epoch)
+                log += '[Iter: {}/{}]'.format(iter_i, epoch_size)
+                log += '[lr: {:.6f}][lr_bk: {:.6f}]'.format(cur_lr_dict['lr'], cur_lr_dict['lr_bk'])
+                # loss infor
+                for k in loss_dict_reduced.keys():
+                    log += '[{}: {:.2f}]'.format(k, loss_dict_reduced[k])
 
+                # other infor
+                log += '[time: {:.2f}]'.format(t1 - t0)
+                log += '[gnorm: {:.2f}]'.format(total_norm)
+                log += '[size: [{}, {}]]'.format(args.train_min_size, args.train_max_size)
+
+                # print log infor
+                print(log, flush=True)
+                
                 t0 = time.time()
 
         lr_scheduler.step()
         
         # evaluation
-        if (epoch + 1) % args.eval_epoch == 0 or (epoch + 1) == max_epoch:
+        if epoch % args.eval_epoch == 0 or (epoch + 1) == max_epoch:
             # check evaluator
             if distributed_utils.is_main_process():
                 if evaluator is None:
                     print('No evaluator ... save model and go on training.')
                     print('Saving state, epoch: {}'.format(epoch + 1))
                     weight_name = '{}_epoch_{}.pth'.format(args.version, epoch + 1)
-                    torch.save(model_without_ddp.state_dict(), os.path.join(path_to_save, weight_name)) 
+                    checkpoint_path = os.path.join(path_to_save, weight_name)
+                    torch.save({'model': model_without_ddp.state_dict(),
+                                'epoch': epoch,
+                                'args': args}, 
+                                checkpoint_path)                      
                 else:
                     print('eval ...')
                     model_eval = model_without_ddp
@@ -305,7 +303,11 @@ def train():
                         # save model
                         print('Saving state, epoch:', epoch + 1)
                         weight_name = '{}_epoch_{}_{:.2f}.pth'.format(args.version, epoch + 1, best_map*100)
-                        torch.save(model_eval.state_dict(), os.path.join(path_to_save, weight_name)) 
+                        checkpoint_path = os.path.join(path_to_save, weight_name)
+                        torch.save({'model': model_without_ddp.state_dict(),
+                                    'epoch': epoch,
+                                    'args': args}, 
+                                    checkpoint_path)                      
 
                     # set train mode.
                     model_eval.trainable = True
@@ -321,97 +323,6 @@ def train():
             dataloader.dataset.mosaic = False
 
 
-def build_dataset(cfg, args, device):
-    # transform
-    trans_config = cfg['transforms'][args.schedule]
-    print('==============================')
-    print('TrainTransforms: {}'.format(trans_config))
-    train_transform = TrainTransforms(trans_config=trans_config,
-                                      min_size=args.train_min_size,
-                                      max_size=args.train_max_size,
-                                      random_size=cfg['epoch'][args.schedule]['multi_scale'],
-                                      pixel_mean=cfg['pixel_mean'],
-                                      pixel_std=cfg['pixel_std'],
-                                      format=cfg['format'])
-    val_transform = ValTransforms(min_size=args.val_min_size,
-                                  max_size=args.val_max_size,
-                                  pixel_mean=cfg['pixel_mean'],
-                                  pixel_std=cfg['pixel_std'],
-                                  format=cfg['format'])
-    color_augment = BaseTransforms(min_size=args.train_min_size,
-                                   max_size=args.train_max_size,
-                                   random_size=cfg['epoch'][args.schedule]['multi_scale'],
-                                   pixel_mean=cfg['pixel_mean'],
-                                   pixel_std=cfg['pixel_std'],
-                                   format=cfg['format'])
-    # dataset
-    
-    if args.dataset == 'voc':
-        data_dir = os.path.join(args.root, 'VOCdevkit')
-        num_classes = 20
-        # dataset
-        dataset = VOCDetection(img_size=args.train_max_size,
-                               data_dir=data_dir, 
-                               transform=train_transform,
-                               color_augment=color_augment,
-                               mosaic=args.mosaic)
-        # evaluator
-        evaluator = VOCAPIEvaluator(data_dir=data_dir,
-                                    device=device,
-                                    transform=val_transform)
-
-    elif args.dataset == 'coco':
-        data_dir = os.path.join(args.root, 'COCO')
-        num_classes = 80
-        # dataset
-        dataset = COCODataset(img_size=args.train_max_size,
-                              data_dir=data_dir,
-                              image_set='train2017',
-                              transform=train_transform,
-                              color_augment=color_augment,
-                              mosaic=args.mosaic)
-        # evaluator
-        evaluator = COCOAPIEvaluator(data_dir=data_dir,
-                                     device=device,
-                                     transform=val_transform)
-    
-    else:
-        print('unknow dataset !! Only support voc and coco !!')
-        exit(0)
-
-    print('==============================')
-    print('Training model on:', args.dataset)
-    print('The dataset size:', len(dataset))
-
-    return dataset, evaluator, num_classes
-
-
-def build_dataloader(args, dataset, collate_fn=None):
-    # distributed
-    if args.distributed:
-        # dataloader
-        dataloader = torch.utils.data.DataLoader(
-                        dataset=dataset, 
-                        batch_size=args.batch_size, 
-                        collate_fn=collate_fn,
-                        num_workers=args.num_workers,
-                        pin_memory=True,
-                        sampler=torch.utils.data.distributed.DistributedSampler(dataset)
-                        )
-
-    else:
-        # dataloader
-        dataloader = torch.utils.data.DataLoader(
-                        dataset=dataset, 
-                        shuffle=True,
-                        batch_size=args.batch_size, 
-                        collate_fn=collate_fn,
-                        num_workers=args.num_workers,
-                        pin_memory=True,
-                        drop_last=True
-                        )
-    return dataloader
-    
 
 if __name__ == '__main__':
     train()

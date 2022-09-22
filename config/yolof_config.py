@@ -5,22 +5,20 @@ yolof_config = {
     'yolof18': {
         # input
         'format': 'RGB',
-        'pixel_mean': [0.485, 0.456, 0.406],
-        'pixel_std': [0.229, 0.224, 0.225],
+        'pixel_mean': [123.675, 116.28, 103.53],
+        'pixel_std': [58.395, 57.12, 57.375],
         'transforms': {
             '1x':[{'name': 'RandomHorizontalFlip'},
                   {'name': 'RandomShift', 'max_shift': 32},
                   {'name': 'ToTensor'},
                   {'name': 'Resize'},
-                  {'name': 'Normalize'},
-                  {'name': 'PadImage'}],
+                  {'name': 'Normalize'}],
 
             '2x':[{'name': 'RandomHorizontalFlip'},
                   {'name': 'RandomShift', 'max_shift': 32},
                   {'name': 'ToTensor'},
                   {'name': 'Resize'},
-                  {'name': 'Normalize'},
-                  {'name': 'PadImage'}],
+                  {'name': 'Normalize'}],
 
             '3x':[{'name': 'DistortTransform',
                    'hue': 0.1,
@@ -31,8 +29,7 @@ yolof_config = {
                   {'name': 'JitterCrop', 'jitter_ratio': 0.3},
                   {'name': 'ToTensor'},
                   {'name': 'Resize'},
-                  {'name': 'Normalize'},
-                  {'name': 'PadImage'}]},
+                  {'name': 'Normalize'}]},
         # model
         'backbone': 'resnet18',
         'norm_type': 'FrozeBN',

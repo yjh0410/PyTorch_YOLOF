@@ -2,7 +2,176 @@ import torch
 import torch.nn as nn
 import numpy as np
 import math
+import os
+import cv2
 
+from data.voc import VOCDetection
+from data.coco import COCODataset
+from data.transforms import TrainTransforms, ValTransforms, BaseTransforms
+from evaluator.coco_evaluator import COCOAPIEvaluator
+from evaluator.voc_evaluator import VOCAPIEvaluator
+
+
+def vis_data(images, targets, masks):
+    """
+        images: (tensor) [B, 3, H, W]
+        targets: (list) a list of targets
+        masks: (tensor) [B, H, W]
+    """
+    batch_size = images.size(0)
+    # vis data
+    rgb_mean = [123.675, 116.28, 103.53]
+    rgb_std = [58.395, 57.12, 57.375]
+
+    np.random.seed(0)
+    class_colors = [(np.random.randint(255),
+                     np.random.randint(255),
+                     np.random.randint(255)) for _ in range(91)]
+
+    for bi in range(batch_size):
+        # mask
+        mask = masks[bi].bool()
+        image_tensor = images[bi]
+        index = torch.nonzero(mask)
+
+        # pad image
+        # to numpy
+        pad_image = image_tensor.permute(1, 2, 0).cpu().numpy()
+        # denormalize
+        pad_image = (pad_image * rgb_std + rgb_mean).astype(np.uint8)
+        # to BGR
+        pad_image = pad_image[..., (2, 1, 0)]
+
+        # valid image without pad
+        valid_image = image_tensor[:, :index[-1, 0]+1, :index[-1, 1]+1]
+        valid_image = valid_image.permute(1, 2, 0).cpu().numpy()
+        valid_image = (valid_image * rgb_std + rgb_mean).astype(np.uint8)
+        valid_image = valid_image[..., (2, 1, 0)]
+
+        valid_image = valid_image.copy()
+
+        targets_i = targets[bi]
+        tgt_boxes = targets_i['boxes']
+        tgt_labels = targets_i['labels']
+
+        # to numpy
+        mask = mask.cpu().numpy() * 255
+        mask = mask.astype(np.uint8)
+
+        
+        for box, label in zip(tgt_boxes, tgt_labels):
+            x1, y1, x2, y2 = box
+            x1 = int(x1)
+            y1 = int(y1)
+            x2 = int(x2)
+            y2 = int(y2)
+
+            cls_id = int(label)
+            color = class_colors[cls_id]
+
+            valid_image = cv2.rectangle(valid_image, (x1, y1), (x2, y2), color, 2)
+
+        cv2.imshow('pad image', pad_image)
+        cv2.waitKey(0)
+
+        cv2.imshow('valid image', valid_image)
+        cv2.waitKey(0)
+
+        cv2.imshow('mask', mask)
+        cv2.waitKey(0)
+
+
+def build_dataset(cfg, args, device):
+    # transform
+    trans_config = cfg['transforms'][args.schedule]
+    print('==============================')
+    print('TrainTransforms: {}'.format(trans_config))
+    train_transform = TrainTransforms(trans_config=trans_config,
+                                      min_size=args.train_min_size,
+                                      max_size=args.train_max_size,
+                                      random_size=cfg['epoch'][args.schedule]['multi_scale'],
+                                      pixel_mean=cfg['pixel_mean'],
+                                      pixel_std=cfg['pixel_std'],
+                                      format=cfg['format'])
+    val_transform = ValTransforms(min_size=args.val_min_size,
+                                  max_size=args.val_max_size,
+                                  pixel_mean=cfg['pixel_mean'],
+                                  pixel_std=cfg['pixel_std'],
+                                  format=cfg['format'])
+    color_augment = BaseTransforms(min_size=args.train_min_size,
+                                   max_size=args.train_max_size,
+                                   random_size=cfg['epoch'][args.schedule]['multi_scale'],
+                                   pixel_mean=cfg['pixel_mean'],
+                                   pixel_std=cfg['pixel_std'],
+                                   format=cfg['format'])
+    # dataset
+    
+    if args.dataset == 'voc':
+        data_dir = os.path.join(args.root, 'VOCdevkit')
+        num_classes = 20
+        # dataset
+        dataset = VOCDetection(img_size=args.train_max_size,
+                               data_dir=data_dir, 
+                               transform=train_transform,
+                               color_augment=color_augment,
+                               mosaic=args.mosaic)
+        # evaluator
+        evaluator = VOCAPIEvaluator(data_dir=data_dir,
+                                    device=device,
+                                    transform=val_transform)
+
+    elif args.dataset == 'coco':
+        data_dir = os.path.join(args.root, 'COCO')
+        num_classes = 80
+        # dataset
+        dataset = COCODataset(img_size=args.train_max_size,
+                              data_dir=data_dir,
+                              image_set='train2017',
+                              transform=train_transform,
+                              color_augment=color_augment,
+                              mosaic=args.mosaic)
+        # evaluator
+        evaluator = COCOAPIEvaluator(data_dir=data_dir,
+                                     device=device,
+                                     transform=val_transform)
+    
+    else:
+        print('unknow dataset !! Only support voc and coco !!')
+        exit(0)
+
+    print('==============================')
+    print('Training model on:', args.dataset)
+    print('The dataset size:', len(dataset))
+
+    return dataset, evaluator, num_classes
+
+
+def build_dataloader(args, dataset, collate_fn=None):
+    # distributed
+    if args.distributed:
+        # dataloader
+        dataloader = torch.utils.data.DataLoader(
+                        dataset=dataset, 
+                        batch_size=args.batch_size, 
+                        collate_fn=collate_fn,
+                        num_workers=args.num_workers,
+                        pin_memory=True,
+                        sampler=torch.utils.data.distributed.DistributedSampler(dataset)
+                        )
+
+    else:
+        # dataloader
+        dataloader = torch.utils.data.DataLoader(
+                        dataset=dataset, 
+                        shuffle=True,
+                        batch_size=args.batch_size, 
+                        collate_fn=collate_fn,
+                        num_workers=args.num_workers,
+                        pin_memory=True,
+                        drop_last=True
+                        )
+    return dataloader
+    
 
 def nms(dets, scores, nms_thresh=0.4):
     """"Pure Python NMS baseline."""
@@ -50,25 +219,66 @@ def get_total_grad_norm(parameters, norm_type=2):
     return total_norm
 
 
+def load_weight(model, path_to_ckpt):
+    checkpoint = torch.load(path_to_ckpt, map_location='cpu')
+    # checkpoint state dict
+    checkpoint_state_dict = checkpoint.pop("model")
+    # model state dict
+    model_state_dict = model.state_dict()
+    # check
+    for k in list(checkpoint_state_dict.keys()):
+        if k in model_state_dict:
+            shape_model = tuple(model_state_dict[k].shape)
+            shape_checkpoint = tuple(checkpoint_state_dict[k].shape)
+            if shape_model != shape_checkpoint:
+                checkpoint_state_dict.pop(k)
+        else:
+            checkpoint_state_dict.pop(k)
+            print(k)
+
+    model.load_state_dict(checkpoint_state_dict)
+
+    print('Finished loading model!')
+
+    return model
+
+
 class CollateFunc(object):
+    def _max_by_axis(self, the_list):
+        # type: (List[List[int]]) -> List[int]
+        maxes = the_list[0]
+        for sublist in the_list[1:]:
+            for index, item in enumerate(sublist):
+                maxes[index] = max(maxes[index], item)
+        return maxes
+
+
     def __call__(self, batch):
-        targets = []
-        images = []
-        masks = []
+        batch = list(zip(*batch))
 
-        for sample in batch:
-            image = sample[0]
-            target = sample[1]
-            mask = sample[2]
+        image_list = batch[0]
+        target_list = batch[1]
 
-            images.append(image)
-            targets.append(target)
-            masks.append(mask)
+        # TODO make this more general
+        if image_list[0].ndim == 3:
 
-        images = torch.stack(images, 0) # [B, C, H, W]
-        masks = torch.stack(masks, 0)   # [B, H, W]
+            # TODO make it support different-sized images
+            max_size = self._max_by_axis([list(img.shape) for img in image_list])
+            # min_size = tuple(min(s) for s in zip(*[img.shape for img in image_list]))
+            batch_shape = [len(image_list)] + max_size
+            b, c, h, w = batch_shape
+            dtype = image_list[0].dtype
+            device = image_list[0].device
+            batch_tensor = torch.zeros(batch_shape, dtype=dtype, device=device)
+            batch_mask = torch.zeros((b, h, w), dtype=dtype, device=device)
 
-        return images, targets, masks
+            for img, pad_img, m in zip(image_list, batch_tensor, batch_mask):
+                pad_img[: img.shape[0], : img.shape[1], : img.shape[2]].copy_(img)
+                m[: img.shape[1], :img.shape[2]] = 1.0
+        else:
+            raise ValueError('not supported')
+            
+        return batch_tensor, target_list, batch_mask
 
 
 # test time augmentation(TTA)

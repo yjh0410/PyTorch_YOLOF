@@ -58,7 +58,7 @@ class BackboneBase(nn.Module):
         for name, parameter in backbone.named_parameters():
             if 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
                 parameter.requires_grad_(False)
-        return_layers = {'layer4': "0"}        
+        return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
         self.num_channels = num_channels
 
@@ -68,7 +68,7 @@ class BackboneBase(nn.Module):
         for name, fmp in xs.items():
             fmp_list.append(fmp)
 
-        return fmp_list[-1]
+        return fmp_list
 
 
 class Backbone(BackboneBase):
@@ -105,9 +105,10 @@ def build_resnet(model_name='resnet18', pretrained=False, norm_type='BN'):
 
 
 if __name__ == '__main__':
-    model, feat_dim = build_resnet(model_name='resnet50-d', pretrained=True)
+    model, feat_dim = build_resnet(model_name='resnet50-d', pretrained=False)
     print(feat_dim)
 
     x = torch.randn(2, 3, 800, 800)
-    y = model(x)
-    print(y.size())
+    output = model(x)
+    for y in output:
+        print(y.size())

@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .box_ops import *
-from utils.matcher import UniformMatcher
+from utils.box_ops import *
 from utils.distributed_utils import get_world_size, is_dist_avail_and_initialized
+
+from .matcher import UniformMatcher
 
 
 class SigmoidFocalWithLogitsLoss(nn.Module):
@@ -38,25 +39,18 @@ class SigmoidFocalWithLogitsLoss(nn.Module):
 
 
 class Criterion(nn.Module):
-    def __init__(self, 
-                 cfg, 
-                 device, 
-                 alpha=0.25,
-                 gamma=2.0,
-                 loss_cls_weight=1.0, 
-                 loss_reg_weight=1.0, 
-                 num_classes=80):
+    def __init__(self, args, cfg, device, num_classes=80):
         super().__init__()
         self.cfg = cfg
         self.device = device
-        self.alpha = alpha
-        self.gamma = gamma
+        self.alpha = args.alpha
+        self.gamma = args.gamma
         self.matcher = UniformMatcher(cfg['topk'])
         self.num_classes = num_classes
-        self.loss_cls_weight = loss_cls_weight
-        self.loss_reg_weight = loss_reg_weight
+        self.loss_cls_weight = args.loss_cls_weight
+        self.loss_reg_weight = args.loss_reg_weight
 
-        self.cls_loss_f = SigmoidFocalWithLogitsLoss(reduction='none', gamma=gamma, alpha=alpha)
+        self.cls_loss_f = SigmoidFocalWithLogitsLoss(reduction='none', gamma=args.gamma, alpha=args.alpha)
 
 
     def loss_labels(self, pred_cls, tgt_cls, num_boxes):
@@ -83,41 +77,38 @@ class Criterion(nn.Module):
         return loss_reg.sum() / num_boxes
 
 
-    def forward(self,
-                outputs, 
-                targets, 
-                anchor_boxes=None):
+    def forward(self, outputs, targets):
         """
             outputs['pred_cls']: (Tensor) [B, M, C]
             outputs['pred_box']: (Tensor) [B, M, 4]
             targets: (List) [dict{'boxes': [...], 
                                  'labels': [...], 
                                  'orig_size': ...}, ...]
-            anchor_boxes: (Tensor) [M, 4]
         """
         pred_box = outputs['pred_box']
         pred_cls = outputs['pred_cls'].reshape(-1, self.num_classes)
-        pred_box_copy = pred_box.detach().clone().cpu()
-        anchor_boxes_copy = anchor_boxes.clone().cpu()
-        # rescale tgt boxes
+        anchor_boxes = outputs['anchors']
         B = len(targets)
-        indices = self.matcher(pred_box_copy, anchor_boxes_copy, targets)
-        anchor_boxes_copy = box_cxcywh_to_xyxy(anchor_boxes_copy)
+
+        # Matcher
+        indices = self.matcher(pred_box, anchor_boxes, targets)
+
         # [M, 4] -> [1, M, 4] -> [B, M, 4]
-        anchor_boxes_copy = anchor_boxes_copy[None].repeat(B, 1, 1)
+        anchor_boxes = box_cxcywh_to_xyxy(anchor_boxes)
+        anchor_boxes = anchor_boxes[None].repeat(B, 1, 1)
 
         ious = []
         pos_ious = []
         for i in range(B):
             src_idx, tgt_idx = indices[i]
             # iou between predbox and tgt box
-            iou, _ = box_iou(pred_box_copy[i, ...], (targets[i]['boxes']).clone())
+            iou, _ = box_iou(pred_box[i, ...], (targets[i]['boxes']).clone())
             if iou.numel() == 0:
                 max_iou = iou.new_full((iou.size(0),), 0)
             else:
                 max_iou = iou.max(dim=1)[0]
             # iou between anchorbox and tgt box
-            a_iou, _ = box_iou(anchor_boxes_copy[i], (targets[i]['boxes']).clone())
+            a_iou, _ = box_iou(anchor_boxes[i], (targets[i]['boxes']).clone())
             if a_iou.numel() == 0:
                 pos_iou = a_iou.new_full((0,), 0)
             else:
@@ -131,7 +122,7 @@ class Criterion(nn.Module):
         pos_ignore_idx = pos_ious < self.cfg['iou_t']
 
         src_idx = torch.cat(
-            [src + idx * anchor_boxes_copy[0].shape[0] for idx, (src, _) in
+            [src + idx * anchor_boxes[0].shape[0] for idx, (src, _) in
              enumerate(indices)])
         # [BM,]
         gt_cls = torch.full(pred_cls.shape[:1],
@@ -173,15 +164,17 @@ class Criterion(nn.Module):
         # total loss
         losses = self.loss_cls_weight * loss_labels + self.loss_reg_weight * loss_bboxes
 
-        return loss_labels, loss_bboxes, losses
+        loss_dict = dict(
+            cls_loss=loss_labels,
+            reg_loss=loss_bboxes,
+            total_loss=losses
+        )
+
+        return loss_dict
 
 
 def build_criterion(args, cfg, device, num_classes=80):
-    criterion = Criterion(cfg=cfg,
-                          device=device,
-                          loss_cls_weight=args.loss_cls_weight,
-                          loss_reg_weight=args.loss_reg_weight,
-                          num_classes=num_classes)
+    criterion = Criterion(args=args, cfg=cfg, device=device, num_classes=num_classes)
     return criterion
 
     

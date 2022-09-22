@@ -1,6 +1,5 @@
 import numpy as np
 import math
-import time
 import torch
 import torch.nn as nn
 from ..backbone import build_backbone
@@ -144,55 +143,24 @@ class YOLOF(nn.Module):
         return keep
 
 
-    def postprocess(self, bboxes, scores):
-        """
-        bboxes: (N, 4), bsize = 1
-        scores: (N, C), bsize = 1
-        """
-
-        cls_inds = np.argmax(scores, axis=1)
-        scores = scores[(np.arange(scores.shape[0]), cls_inds)]
-        
-        # threshold
-        keep = np.where(scores >= self.conf_thresh)
-        bboxes = bboxes[keep]
-        scores = scores[keep]
-        cls_inds = cls_inds[keep]
-
-        # NMS
-        keep = np.zeros(len(bboxes), dtype=np.int)
-        for i in range(self.num_classes):
-            inds = np.where(cls_inds == i)[0]
-            if len(inds) == 0:
-                continue
-            c_bboxes = bboxes[inds]
-            c_scores = scores[inds]
-            c_keep = self.nms(c_bboxes, c_scores)
-            keep[inds[c_keep]] = 1
-
-        keep = np.where(keep > 0)
-        bboxes = bboxes[keep]
-        scores = scores[keep]
-        cls_inds = cls_inds[keep]
-
-        return bboxes, scores, cls_inds
-
-
     @torch.no_grad()
     def inference_single_image(self, x):
         img_h, img_w = x.shape[2:]
         # backbone
-        x = self.backbone(x)
+        xs = self.backbone(x)
+        x = xs[-1]
 
         # neck
         x = self.neck(x)
-        H, W = x.shape[2:]
+        fmp_h, fmp_w = x.shape[2:]
 
         # head
         cls_pred, reg_pred = self.head(x)
+        cls_pred, reg_pred = cls_pred[0], reg_pred[0]
 
-        # decode box
-        anchor_boxes = self.generate_anchors(fmp_size=[H, W]) # [M, 4]
+        # anchor box
+        anchor_boxes = self.generate_anchors(fmp_size=[fmp_h, fmp_w]) # [M, 4]
+
         # scores
         scores, labels = torch.max(cls_pred.sigmoid(), dim=-1)
 
@@ -203,8 +171,8 @@ class YOLOF(nn.Module):
             reg_pred = reg_pred[indices]
             anchor_boxes = anchor_boxes[indices]
 
-        # decode box
-        bboxes = self.decode_boxes(anchor_boxes[None], reg_pred[None])[0] # [N, 4]
+        # decode box: [N, 4]
+        bboxes = self.decode_boxes(anchor_boxes, reg_pred)
 
         # to cpu
         scores = scores.cpu().numpy()
@@ -246,22 +214,25 @@ class YOLOF(nn.Module):
             return self.inference_single_image(x)
         else:
             # backbone
-            x = self.backbone(x)
+            xs = self.backbone(x)
+            x = xs[-1]
 
             # neck
             x = self.neck(x)
-            H, W = x.shape[2:]
+            fmp_h, fmp_w = x.shape[2:]
 
             # head
             cls_pred, reg_pred = self.head(x)
 
-            # decode box
-            anchor_boxes = self.generate_anchors(fmp_size=[H, W]) # [M, 4]
-            box_pred = self.decode_boxes(anchor_boxes[None], reg_pred) # [B, M, 4]
+            # anchor box: [M, 4]
+            anchor_boxes = self.generate_anchors(fmp_size=[fmp_h, fmp_w])
+
+            # decode box: [B, M, 4]
+            box_pred = self.decode_boxes(anchor_boxes[None], reg_pred)
             
             if mask is not None:
                 # [B, H, W]
-                mask = torch.nn.functional.interpolate(mask[None], size=[H, W]).bool()[0]
+                mask = torch.nn.functional.interpolate(mask[None], size=[fmp_h, fmp_w]).bool()[0]
                 # [B, H, W] -> [B, HW]
                 mask = mask.flatten(1)
                 # [B, HW] -> [B, HW, KA] -> [BM,], M= HW x KA
@@ -269,6 +240,7 @@ class YOLOF(nn.Module):
 
             outputs = {"pred_cls": cls_pred,
                        "pred_box": box_pred,
+                       "anchors": anchor_boxes,
                        "mask": mask}
 
             return outputs 
