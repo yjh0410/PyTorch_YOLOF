@@ -165,23 +165,9 @@ yolof_config = {
         'test_min_size': 512,
         'test_max_size': 736,
         'format': 'RGB',
-        'pixel_mean': [0.485, 0.456, 0.406],
-        'pixel_std': [0.229, 0.224, 0.225],
+        'pixel_mean': [123.675, 116.28, 103.53],
+        'pixel_std': [58.395, 57.12, 57.375],
         'transforms': {
-            '1x':[{'name': 'RandomHorizontalFlip'},
-                  {'name': 'RandomShift', 'max_shift': 32},
-                  {'name': 'ToTensor'},
-                  {'name': 'Resize'},
-                  {'name': 'Normalize'},
-                  {'name': 'PadImage'}],
-
-            '2x':[{'name': 'RandomHorizontalFlip'},
-                  {'name': 'RandomShift', 'max_shift': 32},
-                  {'name': 'ToTensor'},
-                  {'name': 'Resize'},
-                  {'name': 'Normalize'},
-                  {'name': 'PadImage'}],
-
             '3x':[{'name': 'DistortTransform',
                    'hue': 0.1,
                    'saturation': 1.5,
@@ -191,11 +177,11 @@ yolof_config = {
                   {'name': 'JitterCrop', 'jitter_ratio': 0.3},
                   {'name': 'ToTensor'},
                   {'name': 'Resize'},
-                  {'name': 'Normalize'},
-                  {'name': 'PadImage'}]},
+                  {'name': 'Normalize'}]},
         # model
-        'backbone': 'resnet50-d',
+        'backbone': 'resnet50',
         'norm_type': 'FrozeBN',
+        'res5_dilation': True,
         'stride': 16,
         'act_type': 'relu',
         # neck
@@ -206,16 +192,19 @@ yolof_config = {
         'head_dim': 512,
         'head': 'naive_head',
         # post process
-        'conf_thresh': 0.05,
+        'conf_thresh': 0.1,
+        'conf_thresh_val': 0.05,
         'nms_thresh': 0.6,
         # anchor box
-        'anchor_size': [[16, 16], [32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
+        'anchor_size': [[32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
         # matcher
         'topk': 4,
         'iou_t': 0.15,
         'igt': 0.7,
         'ctr_clamp': 32,
         # optimizer
+        'base_lr': 0.12 / 64,
+        'bk_lr_ratio': 1.0 / 3.0,
         'optimizer': 'sgd',
         'momentum': 0.9,
         'weight_decay': 1e-4,
@@ -225,7 +214,7 @@ yolof_config = {
         'epoch': {
             '3x': {'max_epoch': 36, 
                     'lr_epoch': [24, 33], 
-                    'multi_scale': [480, 512, 544, 576, 608, 640]},
+                    'multi_scale': [320, 352, 384, 416, 448, 480, 512, 544, 576, 608, 640]},
         },
     },
 
