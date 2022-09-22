@@ -53,6 +53,8 @@ yolof_config = {
         'igt': 0.7,
         'ctr_clamp': 32,
         # optimizer
+        'base_lr': 0.12 / 64,
+        'bk_lr_ratio': 1.0 / 3.0,
         'optimizer': 'sgd',
         'momentum': 0.9,
         'weight_decay': 1e-4,

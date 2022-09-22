@@ -118,8 +118,7 @@ class COCODataset(Dataset):
         anno = np.array(anno).reshape(-1, 5)
         target = {
             "boxes": anno[:, :4],
-            "labels": anno[:, 4],
-            "orig_size": [height, width]
+            "labels": anno[:, 4]
         }
         
         return image, target
@@ -221,8 +220,7 @@ class COCODataset(Dataset):
         # target
         mosaic_target = {
             "boxes": mosaic_bboxes,
-            "labels": mosaic_labels,
-            "orig_size": [self.img_size*2, self.img_size*2]
+            "labels": mosaic_labels
         }
         
         return mosaic_img, mosaic_target

@@ -47,6 +47,7 @@ class ToTensor(object):
         else:
             print('Unknown color format !!')
             exit()
+
         if target is not None:
             target["boxes"] = torch.as_tensor(target["boxes"]).float()
             target["labels"] = torch.as_tensor(target["labels"]).long()
@@ -191,12 +192,12 @@ class RandomHorizontalFlip(object):
 
     def __call__(self, image, target=None):
         if random.random() < self.p:
+            orig_h, orig_w = image.shape[:2]
             image = image[:, ::-1]
             if target is not None:
-                h, w = target["orig_size"]
                 if "boxes" in target:
                     boxes = target["boxes"].copy()
-                    boxes[..., [0, 2]] = w - boxes[..., [2, 0]]
+                    boxes[..., [0, 2]] = orig_w - boxes[..., [2, 0]]
                     target["boxes"] = boxes
 
         return image, target

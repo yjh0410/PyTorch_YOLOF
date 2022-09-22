@@ -31,10 +31,6 @@ def parse_args():
                         help='Batch size for training')
     parser.add_argument('--schedule', type=str, default='1x', choices=['1x', '2x', '3x', '9x'],
                         help='training schedule. Attention, 9x is designed for YOLOF53-DC5.')
-    parser.add_argument('-lr', '--base_lr', type=float, default=0.03,
-                        help='base learning rate')
-    parser.add_argument('-lr_bk', '--backbone_lr', type=float, default=0.01,
-                        help='backbone learning rate')
     parser.add_argument('--num_workers', default=4, type=int, 
                         help='Number of workers used in dataloading')
     parser.add_argument('--num_gpu', default=1, type=int, 
@@ -173,9 +169,11 @@ def train():
         dist.barrier()
 
     # optimizer
+    base_lr = cfg['base_lr'] * args.batch_size * distributed_utils.get_world_size()
+    backbone_lr = base_lr * cfg['bk_lr_ratio']
     optimizer = build_optimizer(model=model_without_ddp,
-                                base_lr=args.base_lr,
-                                backbone_lr=args.backbone_lr,
+                                base_lr=base_lr,
+                                backbone_lr=backbone_lr,
                                 name=cfg['optimizer'],
                                 momentum=cfg['momentum'],
                                 weight_decay=cfg['weight_decay'])
@@ -186,7 +184,7 @@ def train():
 
     # warmup scheduler
     warmup_scheduler = build_warmup(name=cfg['warmup'],
-                                    base_lr=args.base_lr,
+                                    base_lr=base_lr,
                                     wp_iter=cfg['wp_iter'],
                                     warmup_factor=cfg['warmup_factor'])
 
@@ -213,11 +211,12 @@ def train():
                 # warmup is over
                 print('Warmup is over')
                 warmup = False
-                warmup_scheduler.set_lr(optimizer, args.base_lr, args.base_lr)
+                warmup_scheduler.set_lr(optimizer, base_lr, base_lr)
 
             # to device
             images = images.to(device)
             masks = masks.to(device)
+            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
             # visualize input data
             if args.vis:
