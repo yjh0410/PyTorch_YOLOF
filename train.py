@@ -33,7 +33,7 @@ def parse_args():
                         help='training schedule. Attention, 9x is designed for YOLOF53-DC5.')
     parser.add_argument('--num_workers', default=4, type=int, 
                         help='Number of workers used in dataloading')
-    parser.add_argument('--eval_epoch', default=2, type=int,
+    parser.add_argument('--eval_epoch', default=1, type=int,
                         help='interval between evaluations')
     parser.add_argument('--grad_clip_norm', default=-1., type=float,
                         help='grad clip.')
