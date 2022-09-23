@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import math
 import os
 import cv2
 
@@ -242,14 +241,11 @@ def load_weight(model, path_to_ckpt=None):
 
         model.load_state_dict(checkpoint_state_dict)
 
-        print('Finished loading model!')
-
         return model
 
 
 class CollateFunc(object):
     def _max_by_axis(self, the_list):
-        # type: (List[List[int]]) -> List[int]
         maxes = the_list[0]
         for sublist in the_list[1:]:
             for index, item in enumerate(sublist):

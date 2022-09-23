@@ -149,19 +149,6 @@ def train():
         model = DDP(model, device_ids=[args.gpu])
         model_without_ddp = model.module
 
-    # compute FLOPs and Params
-    if distributed_utils.is_main_process:
-        model_copy = deepcopy(model_without_ddp)
-        FLOPs_and_Params(model=model_copy, 
-                         min_size=args.train_min_size, 
-                         max_size=args.train_max_size, 
-                         device=device)
-        del model_copy
-
-    if args.distributed:
-        # wait for all processes to synchronize
-        dist.barrier()
-
     # optimizer
     base_lr = cfg['base_lr'] * args.batch_size * distributed_utils.get_world_size()
     backbone_lr = base_lr * cfg['bk_lr_ratio']
@@ -179,6 +166,19 @@ def train():
     epoch_size = len(dataloader)
     best_map = -1.
     warmup = not args.no_warmup
+
+    # compute FLOPs and Params
+    if distributed_utils.is_main_process:
+        model_copy = deepcopy(model_without_ddp)
+        FLOPs_and_Params(model=model_copy, 
+                         min_size=args.train_min_size, 
+                         max_size=args.train_max_size, 
+                         device=device)
+        del model_copy
+
+    if args.distributed:
+        # wait for all processes to synchronize
+        dist.barrier()
 
     t0 = time.time()
     # start training loop
