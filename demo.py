@@ -248,7 +248,7 @@ def run():
         max_size=cfg['test_max_size'],
         pixel_mean=cfg['pixel_mean'],
         pixel_std=cfg['pixel_std'],
-        ormat=cfg['format']
+        format=cfg['format']
         )
 
 
