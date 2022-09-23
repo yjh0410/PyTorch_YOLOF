@@ -145,30 +145,23 @@ def build_dataset(cfg, args, device):
     return dataset, evaluator, num_classes
 
 
-def build_dataloader(args, dataset, collate_fn=None):
+def build_dataloader(args, dataset, batch_size, collate_fn=None):
     # distributed
     if args.distributed:
-        # dataloader
-        dataloader = torch.utils.data.DataLoader(
-                        dataset=dataset, 
-                        batch_size=args.batch_size, 
-                        collate_fn=collate_fn,
-                        num_workers=args.num_workers,
-                        pin_memory=True,
-                        sampler=torch.utils.data.distributed.DistributedSampler(dataset)
-                        )
-
+        sampler = torch.utils.data.distributed.DistributedSampler(dataset)
     else:
-        # dataloader
-        dataloader = torch.utils.data.DataLoader(
-                        dataset=dataset, 
-                        shuffle=True,
-                        batch_size=args.batch_size, 
-                        collate_fn=collate_fn,
-                        num_workers=args.num_workers,
-                        pin_memory=True,
-                        drop_last=True
-                        )
+        sampler = torch.utils.data.RandomSampler(dataset)
+
+    batch_sampler_train = torch.utils.data.BatchSampler(sampler, 
+                                                        batch_size, 
+                                                        drop_last=True)
+
+    dataloader = torch.utils.data.DataLoader(dataset, 
+                                             batch_sampler=batch_sampler_train,
+                                             collate_fn=collate_fn, 
+                                             num_workers=args.num_workers,
+                                             pin_memory=True)
+    
     return dataloader
     
 

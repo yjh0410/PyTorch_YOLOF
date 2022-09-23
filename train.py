@@ -33,8 +33,6 @@ def parse_args():
                         help='training schedule. Attention, 9x is designed for YOLOF53-DC5.')
     parser.add_argument('--num_workers', default=4, type=int, 
                         help='Number of workers used in dataloading')
-    parser.add_argument('--num_gpu', default=1, type=int, 
-                        help='Number of GPUs to train')
     parser.add_argument('--eval_epoch', type=int,
                             default=2, help='interval between evaluations')
     parser.add_argument('--grad_clip_norm', type=float, default=-1.,
@@ -47,13 +45,9 @@ def parse_args():
                         help="visualize input data.")
 
     # model
-    parser.add_argument('-v', '--version', default='yolof50', choices=['yolof18', 'yolof50', 'yolof50-DC5', \
-                                                                       'yolof101', 'yolof101-DC5', 'yolof50-RT'],
+    parser.add_argument('-v', '--version', default='yolof50',
+                        choices=['yolof18', 'yolof50', 'yolof50-DC5', 'yolof101', 'yolof101-DC5', 'yolof50-RT'],
                         help='build yolof')
-    parser.add_argument('--conf_thresh', default=0.05, type=float,
-                        help='NMS threshold')
-    parser.add_argument('--nms_thresh', default=0.6, type=float,
-                        help='NMS threshold')
     parser.add_argument('--topk', default=1000, type=int,
                         help='NMS threshold')
     parser.add_argument('-p', '--coco_pretrained', default=None, type=str,
@@ -122,7 +116,7 @@ def train():
     dataset, evaluator, num_classes = build_dataset(cfg, args, device)
 
     # dataloader
-    dataloader = build_dataloader(args, dataset, CollateFunc())
+    dataloader = build_dataloader(args, dataset, args.batch_size, CollateFunc())
 
     # criterion
     criterion = build_criterion(args=args, device=device, cfg=cfg, num_classes=num_classes)
