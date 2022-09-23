@@ -46,19 +46,9 @@ def parse_args():
     parser.add_argument('--vis', dest="vis", action="store_true", default=False,
                         help="visualize input data.")
 
-    # input image size               
-    parser.add_argument('--train_min_size', type=int, default=800,
-                        help='The shorter train size of the input image')
-    parser.add_argument('--train_max_size', type=int, default=1333,
-                        help='The longer train size of the input image')
-    parser.add_argument('--val_min_size', type=int, default=800,
-                        help='The shorter val size of the input image')
-    parser.add_argument('--val_max_size', type=int, default=1333,
-                        help='The longer val size of the input image')
-
     # model
     parser.add_argument('-v', '--version', default='yolof50', choices=['yolof18', 'yolof50', 'yolof50-DC5', \
-                                                                       'yolof101', 'yolof101-DC5', 'yolof50-DC5-640'],
+                                                                       'yolof101', 'yolof101-DC5', 'yolof50-RT'],
                         help='build yolof')
     parser.add_argument('--conf_thresh', default=0.05, type=float,
                         help='NMS threshold')
@@ -86,8 +76,6 @@ def parse_args():
                         help='weight of reg loss')
     
     # train trick
-    parser.add_argument('--mosaic', action='store_true', default=False,
-                        help='Mosaic augmentation')
     parser.add_argument('--no_warmup', action='store_true', default=False,
                         help='do not use warmup')
 
@@ -171,8 +159,8 @@ def train():
     if distributed_utils.is_main_process:
         model_copy = deepcopy(model_without_ddp)
         FLOPs_and_Params(model=model_copy, 
-                         min_size=args.train_min_size, 
-                         max_size=args.train_max_size, 
+                         min_size=cfg['test_min_size'], 
+                         max_size=cfg['test_max_size'], 
                          device=device)
         del model_copy
 
@@ -248,7 +236,7 @@ def train():
                 # other infor
                 log += '[time: {:.2f}]'.format(t1 - t0)
                 log += '[gnorm: {:.2f}]'.format(total_norm)
-                log += '[size: [{}, {}]]'.format(args.train_min_size, args.train_max_size)
+                log += '[size: [{}, {}]]'.format(cfg['train_min_size'], cfg['train_max_size'])
 
                 # print log infor
                 print(log, flush=True)

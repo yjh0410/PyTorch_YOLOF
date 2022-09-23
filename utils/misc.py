@@ -113,7 +113,7 @@ def build_dataset(cfg, args, device):
                                data_dir=data_dir, 
                                transform=train_transform,
                                color_augment=color_augment,
-                               mosaic=args.mosaic)
+                               mosaic=cfg['mosaic'])
         # evaluator
         evaluator = VOCAPIEvaluator(data_dir=data_dir,
                                     device=device,
@@ -128,7 +128,7 @@ def build_dataset(cfg, args, device):
                               image_set='train2017',
                               transform=train_transform,
                               color_augment=color_augment,
-                              mosaic=args.mosaic)
+                              mosaic=cfg['mosaic'])
         # evaluator
         evaluator = COCOAPIEvaluator(data_dir=data_dir,
                                      device=device,

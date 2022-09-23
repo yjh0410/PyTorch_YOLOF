@@ -18,10 +18,6 @@ def parse_args():
     parser = argparse.ArgumentParser(description='YOLOF Detection')
 
     # basic
-    parser.add_argument('--min_size', default=800, type=int,
-                        help='the min size of input image')
-    parser.add_argument('--max_size', default=1333, type=int,
-                        help='the min size of input image')
     parser.add_argument('--show', action='store_true', default=False,
                         help='show the visulization results.')
     parser.add_argument('-vs', '--visual_threshold', default=0.35, type=float,
@@ -32,15 +28,11 @@ def parse_args():
                         help='Dir to save results')
 
     # model
-    parser.add_argument('-v', '--version', default='yolof50', choices=['yolof18', 'yolof50', 'yolof50-DC5', \
-                                                                       'yolof101', 'yolof101-DC5', 'yolof50-DC5-640'],
+    parser.add_argument('-v', '--version', default='yolof50',
+                        choices=['yolof18', 'yolof50', 'yolof50-DC5', 'yolof101', 'yolof101-DC5', 'yolof50-RT'],
                         help='build yolof')
     parser.add_argument('--weight', default=None, type=str,
                         help='Trained state_dict file path to open')
-    parser.add_argument('--conf_thresh', default=0.1, type=float,
-                        help='NMS threshold')
-    parser.add_argument('--nms_thresh', default=0.45, type=float,
-                        help='NMS threshold')
     parser.add_argument('--topk', default=100, type=int,
                         help='NMS threshold')
     parser.add_argument('-bg', '--background', action='store_true', default=False,

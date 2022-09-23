@@ -11,6 +11,7 @@ yolof_config = {
         'format': 'RGB',
         'pixel_mean': [123.675, 116.28, 103.53],
         'pixel_std': [58.395, 57.12, 57.375],
+        'mosaic': False,
         'transforms': {
             '1x':[{'name': 'RandomHorizontalFlip'},
                   {'name': 'RandomShift', 'max_shift': 32},
@@ -89,6 +90,7 @@ yolof_config = {
         'format': 'RGB',
         'pixel_mean': [123.675, 116.28, 103.53],
         'pixel_std': [58.395, 57.12, 57.375],
+        'mosaic': False,
         'transforms': {
             '1x':[{'name': 'RandomHorizontalFlip'},
                   {'name': 'RandomShift', 'max_shift': 32},
@@ -167,6 +169,7 @@ yolof_config = {
         'format': 'RGB',
         'pixel_mean': [123.675, 116.28, 103.53],
         'pixel_std': [58.395, 57.12, 57.375],
+        'mosaic': True,
         'transforms': {
             '3x':[{'name': 'DistortTransform',
                    'hue': 0.1,
@@ -186,7 +189,7 @@ yolof_config = {
         'act_type': 'relu',
         # neck
         'neck': 'dilated_encoder',
-        'dilation_list': [2, 4, 6, 8],
+        'dilation_list': [1, 2, 4, 6, 8],
         'expand_ratio': 0.25,
         # head
         'head_dim': 512,
@@ -196,7 +199,7 @@ yolof_config = {
         'conf_thresh_val': 0.05,
         'nms_thresh': 0.6,
         # anchor box
-        'anchor_size': [[32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
+        'anchor_size': [[16, 16], [32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
         # matcher
         'topk': 4,
         'iou_t': 0.15,

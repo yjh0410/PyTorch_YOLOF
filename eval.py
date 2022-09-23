@@ -16,23 +16,12 @@ from models.yolof import build_model
 
 def parse_args():
     parser = argparse.ArgumentParser(description='YOLOF Detection')
-    # basic
-    parser.add_argument('--min_size', default=800, type=int,
-                        help='the min size of input image')
-    parser.add_argument('--max_size', default=1333, type=int,
-                        help='the min size of input image')
-    parser.add_argument('--cuda', action='store_true', default=False,
-                        help='Use cuda')
     # model
-    parser.add_argument('-v', '--version', default='yolof50', choices=['yolof18', 'yolof50', 'yolof50-DC5', \
-                                                                       'yolof101', 'yolof101-DC5', 'yolof50-DC5-640'],
+    parser.add_argument('-v', '--version', default='yolof50',
+                        choices=['yolof18', 'yolof50', 'yolof50-DC5', 'yolof101', 'yolof101-DC5', 'yolof50-RT'],
                         help='build yolof')
     parser.add_argument('--weight', default=None, type=str,
                         help='Trained state_dict file path to open')
-    parser.add_argument('--conf_thresh', default=0.05, type=float,
-                        help='NMS threshold')
-    parser.add_argument('--nms_thresh', default=0.6, type=float,
-                        help='NMS threshold')
     parser.add_argument('--topk', default=1000, type=int,
                         help='NMS threshold')
     # dataset
@@ -40,9 +29,6 @@ def parse_args():
                         help='data root')
     parser.add_argument('-d', '--dataset', default='coco',
                         help='coco, voc.')
-    # TTA
-    parser.add_argument('-tta', '--test_aug', action='store_true', default=False,
-                        help='use test augmentation.')
 
     return parser.parse_args()
 
@@ -125,11 +111,13 @@ if __name__ == '__main__':
     print('Finished loading model!')
 
     # transform
-    transform = ValTransforms(min_size=cfg['test_min_size'], 
-                              max_size=cfg['test_max_size'],
-                              pixel_mean=cfg['pixel_mean'],
-                              pixel_std=cfg['pixel_std'],
-                              format=cfg['format'])
+    transform = ValTransforms(
+        min_size=cfg['test_min_size'], 
+        max_size=cfg['test_max_size'],
+        pixel_mean=cfg['pixel_mean'],
+        pixel_std=cfg['pixel_std'],
+        format=cfg['format'
+        ])
 
     # evaluation
     with torch.no_grad():
