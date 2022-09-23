@@ -2,7 +2,7 @@
 python -m torch.distributed.run --nproc_per_node=2 train.py \
                                                     --cuda \
                                                     -dist \
-                                                    -d coco \
+                                                    -d voc \
                                                     --root /mnt/share/ssd2/dataset/ \
                                                     -v yolof18 \
                                                     --batch_size 8 \

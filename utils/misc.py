@@ -151,6 +151,7 @@ def build_dataloader(args, dataset, batch_size, collate_fn=None):
     # distributed
     if args.distributed:
         sampler = DistributedSampler(dataset)
+        print(0)
     else:
         sampler = torch.utils.data.RandomSampler(dataset)
 
