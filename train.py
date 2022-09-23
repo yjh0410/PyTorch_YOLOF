@@ -285,7 +285,7 @@ def train():
                 dist.barrier()
 
         # close mosaic augmentation
-        if args.mosaic and max_epoch - epoch == 5:
+        if cfg['mosaic'] and max_epoch - epoch == 5:
             print('close Mosaic Augmentation ...')
             dataloader.dataset.mosaic = False
 
