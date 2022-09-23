@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
     # load trained weight
     model = load_weight(model=model, path_to_ckpt=args.weight)
-    model.eval()
+    model.to(device).eval()
     print('Finished loading model!')
 
     # fuse conv bn
