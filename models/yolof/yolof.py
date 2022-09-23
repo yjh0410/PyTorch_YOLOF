@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from ..backbone import build_backbone
 from ..neck import build_neck
-from ..head.decoupled_head import DecoupledHead
+from ..head.decoupled_head import build_head
 
 
 DEFAULT_SCALE_CLAMP = math.log(1000.0 / 16)
@@ -40,7 +40,7 @@ class YOLOF(nn.Module):
         self.neck = build_neck(cfg=cfg, in_dim=bk_dim, out_dim=cfg['head_dim'])
                                      
         ## head
-        self.head = DecoupledHead(cfg, cfg['head_dim'], num_classes, self.num_anchors)
+        self.head = build_head(cfg, cfg['head_dim'], num_classes, self.num_anchors)
 
 
     def generate_anchors(self, fmp_size):

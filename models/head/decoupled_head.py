@@ -113,3 +113,10 @@ class DecoupledHead(nn.Module):
         reg_pred = reg_pred.view(B, -1, 4)
 
         return normalized_cls_pred, reg_pred
+
+
+def build_head(cfg, num_classes, num_anchors):
+    head = DecoupledHead(cfg, cfg['head_dim'], num_classes, num_anchors)
+
+    return head
+    
