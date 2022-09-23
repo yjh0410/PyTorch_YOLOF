@@ -8,23 +8,19 @@ DEFAULT_EXP_CLAMP = math.log(1e8)
 
 
 class NaiveHead(nn.Module):
-    def __init__(self, 
-                 head_dim=256,
-                 kernel_size=3,
-                 padding=1,
-                 act_type='relu'):
+    def __init__(self, head_dim=256, act_type='relu'):
         super().__init__()
         self.head_dim = head_dim
 
         self.cls_feats = nn.Sequential(
-            Conv(head_dim, head_dim, k=kernel_size, p=padding, act_type=act_type),
-            Conv(head_dim, head_dim, k=kernel_size, p=padding, act_type=act_type)
+            Conv(head_dim, head_dim, k=3, p=1, act_type=act_type),
+            Conv(head_dim, head_dim, k=3, p=1, act_type=act_type)
         )
         self.reg_feats = nn.Sequential(
-            Conv(head_dim, head_dim, k=kernel_size, p=padding, act_type=act_type),
-            Conv(head_dim, head_dim, k=kernel_size, p=padding, act_type=act_type),
-            Conv(head_dim, head_dim, k=kernel_size, p=padding, act_type=act_type),
-            Conv(head_dim, head_dim, k=kernel_size, p=padding, act_type=act_type)
+            Conv(head_dim, head_dim, k=3, p=1, act_type=act_type),
+            Conv(head_dim, head_dim, k=3, p=1, act_type=act_type),
+            Conv(head_dim, head_dim, k=3, p=1, act_type=act_type),
+            Conv(head_dim, head_dim, k=3, p=1, act_type=act_type)
         )
 
         self._init_weight()
@@ -54,34 +50,25 @@ class NaiveHead(nn.Module):
 
 
 class DecoupledHead(nn.Module):
-    def __init__(self, 
-                 head='naive_head',
-                 head_dim=256,
-                 kernel_size=3,
-                 padding=1,
-                 num_classes=80, 
-                 trainable=False,
-                 num_anchors=1,
-                 act_type='relu'):
+    def __init__(self, cfg, head_dim=512, num_classes=80, num_anchors=1):
         super().__init__()
         self.num_classes = num_classes
         self.head_dim = head_dim
 
         print('==============================')
-        print('Head: {}'.format(head))
+        print('Head: {}'.format(cfg['head']))
 
         # feature stage
-        if head == 'naive_head':
-            self.head = NaiveHead(head_dim, kernel_size, padding, act_type)
+        if cfg['head'] == 'naive_head':
+            self.head = NaiveHead(head_dim, cfg['act_type'])
 
         # prediction stage
         self.obj_pred = nn.Conv2d(head_dim, 1 * num_anchors, kernel_size=3, padding=1)
         self.cls_pred = nn.Conv2d(head_dim, self.num_classes * num_anchors, kernel_size=3, padding=1)
         self.reg_pred = nn.Conv2d(head_dim, 4 * num_anchors, kernel_size=3, padding=1)
 
-        if trainable:
-            # init bias
-            self._init_pred_layers()
+        # init bias
+        self._init_pred_layers()
 
 
     def _init_pred_layers(self):  

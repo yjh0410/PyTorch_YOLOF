@@ -1,20 +1,17 @@
 from .resnet import build_resnet
 
 
-def build_backbone(model_name='resnet50-d', 
-                   pretrained=False, 
-                   norm_type='BN',
-                   res5_dilation=False):
+def build_backbone(cfg, pretrained=False):
     print('==============================')
-    print('Backbone: {}'.format(model_name.upper()))
+    print('Backbone: {}'.format(cfg['backbone'].upper()))
     print('--pretrained: {}'.format(pretrained))
 
-    if 'resnet' in model_name:
+    if cfg['backbone'] in ['resnet18', 'resnet50', 'resnet101']:
         model, feat_dim = build_resnet(
-            model_name=model_name, 
+            model_name=cfg['backbone'], 
             pretrained=pretrained,
-            norm_type=norm_type,
-            res5_dilation=res5_dilation
+            norm_type=cfg['norm_type'],
+            res5_dilation=cfg['res5_dilation']
             )
 
     else:

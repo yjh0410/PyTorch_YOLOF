@@ -32,27 +32,15 @@ class YOLOF(nn.Module):
         self.anchor_size = torch.as_tensor(cfg['anchor_size'])
         self.num_anchors = len(cfg['anchor_size'])
 
-        # backbone
-        self.backbone, bk_dim = build_backbone(
-            model_name=cfg['backbone'], 
-            pretrained=trainable,
-            norm_type=cfg['norm_type'],
-            res5_dilation=cfg['res5_dilation'])
+        #-------------------------- Network -----------------------------#
+        ## backbone
+        self.backbone, bk_dim = build_backbone(cfg=cfg, pretrained=trainable)
 
-        # neck
-        self.neck = build_neck(cfg=cfg, 
-                               in_dim=bk_dim, 
-                               out_dim=cfg['head_dim'])
+        ## neck
+        self.neck = build_neck(cfg=cfg, in_dim=bk_dim, out_dim=cfg['head_dim'])
                                      
-        # head
-        self.head = DecoupledHead(head=cfg['head'],
-                                  head_dim=cfg['head_dim'],
-                                  kernel_size=3,
-                                  padding=1,
-                                  num_classes=num_classes,
-                                  trainable=trainable,
-                                  num_anchors=self.num_anchors,
-                                  act_type=cfg['act_type'])
+        ## head
+        self.head = DecoupledHead(cfg, cfg['head_dim'], num_classes, self.num_anchors)
 
 
     def generate_anchors(self, fmp_size):
