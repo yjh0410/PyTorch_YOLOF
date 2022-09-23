@@ -16,8 +16,8 @@ from models.yolof import build_model
 
 parser = argparse.ArgumentParser(description='Benchmark')
 # Model
-parser.add_argument('-v', '--version', default='yolof50', choices=['yolof18', 'yolof50', 'yolof50-DC5', \
-                                                                    'yolof101', 'yolof101-DC5', 'yolof53', 'yolof53-DC5'],
+parser.add_argument('-v', '--version', default='yolof50',
+                    choices=['yolof-r18', 'yolof-r50', 'yolof-r50-DC5', 'yolof-r101', 'yolof-r101-DC5', 'yolof-r50-RT'],
                     help='build yolof')
 parser.add_argument('--fuse_conv_bn', action='store_true', default=False,
                     help='fuse conv and bn')

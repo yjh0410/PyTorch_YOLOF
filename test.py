@@ -29,7 +29,7 @@ def parse_args():
 
     # model
     parser.add_argument('-v', '--version', default='yolof50',
-                        choices=['yolof18', 'yolof50', 'yolof50-DC5', 'yolof101', 'yolof101-DC5', 'yolof50-RT'],
+                        choices=['yolof-r18', 'yolof-r50', 'yolof-r50-DC5', 'yolof-r101', 'yolof-r101-DC5', 'yolof-r50-RT'],
                         help='build yolof')
     parser.add_argument('--weight', default=None, type=str,
                         help='Trained state_dict file path to open')

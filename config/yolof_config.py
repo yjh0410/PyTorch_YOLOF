@@ -2,7 +2,7 @@
 
 
 yolof_config = {
-    'yolof18': {
+    'yolof-r18': {
         # input
         'train_min_size': 800,
         'train_max_size': 1333,
@@ -83,7 +83,7 @@ yolof_config = {
         },
     },
 
-    'yolof50': {
+    'yolof-r50': {
         # input
         'train_min_size': 800,
         'train_max_size': 1333,
@@ -164,7 +164,7 @@ yolof_config = {
         },
     },
 
-    'yolof50-RT': {
+    'yolof-r50-RT': {
         # input
         'train_min_size': 512,
         'train_max_size': 736,

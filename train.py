@@ -45,8 +45,8 @@ def parse_args():
                         help="visualize input data.")
 
     # model
-    parser.add_argument('-v', '--version', default='yolof50',
-                        choices=['yolof18', 'yolof50', 'yolof50-DC5', 'yolof101', 'yolof101-DC5', 'yolof50-RT'],
+    parser.add_argument('-v', '--version', default='yolof-r50',
+                        choices=['yolof-r18', 'yolof-r50', 'yolof-r50-DC5', 'yolof-r101', 'yolof-r101-DC5', 'yolof-r50-RT'],
                         help='build yolof')
     parser.add_argument('--topk', default=1000, type=int,
                         help='NMS threshold')
