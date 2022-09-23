@@ -28,14 +28,14 @@ def parse_args():
     parser.add_argument('--cuda', action='store_true', default=False,
                         help='use cuda.')
     parser.add_argument('-bs', '--batch_size', default=16, type=int, 
-                        help='Batch size for training')
+                        help='Batch size on single GPU for training')
     parser.add_argument('--schedule', type=str, default='1x', choices=['1x', '2x', '3x', '9x'],
                         help='training schedule. Attention, 9x is designed for YOLOF53-DC5.')
     parser.add_argument('--num_workers', default=4, type=int, 
                         help='Number of workers used in dataloading')
-    parser.add_argument('--eval_epoch', type=int,
-                            default=2, help='interval between evaluations')
-    parser.add_argument('--grad_clip_norm', type=float, default=-1.,
+    parser.add_argument('--eval_epoch', default=2, type=int,
+                        help='interval between evaluations')
+    parser.add_argument('--grad_clip_norm', default=-1., type=float,
                         help='grad clip.')
     parser.add_argument('--tfboard', action='store_true', default=False,
                         help='use tensorboard')
