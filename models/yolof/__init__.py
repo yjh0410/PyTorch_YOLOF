@@ -15,10 +15,11 @@ def build_model(args,
 
     if trainable:
         conf_thresh = cfg['conf_thresh_val']
-        nms_thresh = cfg['nms_thresh']
+        nms_thresh = cfg['nms_thresh_val']
     else:
         if eval_mode:
             conf_thresh = cfg['conf_thresh_val']
+            nms_thresh = cfg['nms_thresh_val']
         else:
             conf_thresh = cfg['conf_thresh']
             nms_thresh = cfg['nms_thresh']

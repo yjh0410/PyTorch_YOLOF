@@ -50,8 +50,9 @@ yolof_config = {
         'head': 'naive_head',
         # post process
         'conf_thresh': 0.1,
+        'nms_thresh': 0.5,
         'conf_thresh_val': 0.05,
-        'nms_thresh': 0.6,
+        'nms_thresh_val': 0.6,
         # anchor box
         'anchor_size': [[32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
         # matcher
@@ -129,8 +130,9 @@ yolof_config = {
         'head': 'naive_head',
         # post process
         'conf_thresh': 0.1,
+        'nms_thresh': 0.5,
         'conf_thresh_val': 0.05,
-        'nms_thresh': 0.6,
+        'nms_thresh_val': 0.6,
         # anchor box
         'anchor_size': [[32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
         # matcher
@@ -196,8 +198,9 @@ yolof_config = {
         'head': 'naive_head',
         # post process
         'conf_thresh': 0.1,
+        'nms_thresh': 0.5,
         'conf_thresh_val': 0.05,
-        'nms_thresh': 0.6,
+        'nms_thresh_val': 0.6,
         # anchor box
         'anchor_size': [[16, 16], [32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
         # matcher
