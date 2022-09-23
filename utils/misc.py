@@ -219,28 +219,32 @@ def get_total_grad_norm(parameters, norm_type=2):
     return total_norm
 
 
-def load_weight(model, path_to_ckpt):
-    checkpoint = torch.load(path_to_ckpt, map_location='cpu')
-    # checkpoint state dict
-    checkpoint_state_dict = checkpoint.pop("model")
-    # model state dict
-    model_state_dict = model.state_dict()
-    # check
-    for k in list(checkpoint_state_dict.keys()):
-        if k in model_state_dict:
-            shape_model = tuple(model_state_dict[k].shape)
-            shape_checkpoint = tuple(checkpoint_state_dict[k].shape)
-            if shape_model != shape_checkpoint:
+def load_weight(model, path_to_ckpt=None):
+    if path_to_ckpt is None:
+        print('No weight file ...')
+        return model
+    else:
+        checkpoint = torch.load(path_to_ckpt, map_location='cpu')
+        # checkpoint state dict
+        checkpoint_state_dict = checkpoint.pop("model")
+        # model state dict
+        model_state_dict = model.state_dict()
+        # check
+        for k in list(checkpoint_state_dict.keys()):
+            if k in model_state_dict:
+                shape_model = tuple(model_state_dict[k].shape)
+                shape_checkpoint = tuple(checkpoint_state_dict[k].shape)
+                if shape_model != shape_checkpoint:
+                    checkpoint_state_dict.pop(k)
+            else:
                 checkpoint_state_dict.pop(k)
-        else:
-            checkpoint_state_dict.pop(k)
-            print(k)
+                print(k)
 
-    model.load_state_dict(checkpoint_state_dict)
+        model.load_state_dict(checkpoint_state_dict)
 
-    print('Finished loading model!')
+        print('Finished loading model!')
 
-    return model
+        return model
 
 
 class CollateFunc(object):

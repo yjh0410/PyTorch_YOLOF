@@ -27,8 +27,8 @@ def parse_args():
     parser.add_argument('-v', '--version', default='yolof50', choices=['yolof18', 'yolof50', 'yolof50-DC5', \
                                                                        'yolof101', 'yolof101-DC5', 'yolof50-DC5-640'],
                         help='build yolof')
-    parser.add_argument('--weight', default='weight/',
-                        type=str, help='Trained state_dict file path to open')
+    parser.add_argument('--weight', default=None, type=str,
+                        help='Trained state_dict file path to open')
     parser.add_argument('--conf_thresh', default=0.05, type=float,
                         help='NMS threshold')
     parser.add_argument('--nms_thresh', default=0.6, type=float,
@@ -120,9 +120,7 @@ if __name__ == '__main__':
                         eval_mode=True)
 
     # load trained weight
-    model = load_weight(device=device, 
-                        model=model, 
-                        path_to_ckpt=args.weight)
+    model = load_weight(model=model, path_to_ckpt=args.weight)
     model.eval()
     print('Finished loading model!')
 

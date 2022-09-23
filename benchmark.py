@@ -9,6 +9,7 @@ from data.transforms import ValTransforms
 from data.coco import COCODataset, coco_class_index, coco_class_labels
 from utils.com_flops_params import FLOPs_and_Params
 from utils import fuse_conv_bn
+from utils.misc import load_weight
 
 from models.yolof import build_model
 
@@ -20,10 +21,6 @@ parser.add_argument('-v', '--version', default='yolof50', choices=['yolof18', 'y
                     help='build yolof')
 parser.add_argument('--fuse_conv_bn', action='store_true', default=False,
                     help='fuse conv and bn')
-parser.add_argument('--conf_thresh', default=0.1, type=float,
-                    help='confidence threshold')
-parser.add_argument('--nms_thresh', default=0.45, type=float,
-                    help='NMS threshold')
 parser.add_argument('--topk', default=100, type=int,
                     help='NMS threshold')
 # data root
@@ -34,8 +31,8 @@ parser.add_argument('--min_size', default=800, type=int,
                     help='the min size of input image')
 parser.add_argument('--max_size', default=1333, type=int,
                     help='the min size of input image')
-parser.add_argument('--weight', default=None,
-                    type=str, help='Trained state_dict file path to open')
+parser.add_argument('--weight', default=None, type=str,
+                    help='Trained state_dict file path to open')
 # cuda
 parser.add_argument('--cuda', action='store_true', default=False, 
                     help='use cuda.')
@@ -117,14 +114,10 @@ if __name__ == '__main__':
                         num_classes=num_classes, 
                         trainable=False)
 
-    # load weight
-    if args.weight:
-        model.load_state_dict(torch.load(args.weight, map_location='cpu'), strict=False)
-        print('Finished loading model!')
-    else:
-        print('The path to weight file is None !')
-        exit(0)
-    model = model.to(device).eval()
+    # load trained weight
+    model = load_weight(model=model, path_to_ckpt=args.weight)
+    model.eval()
+    print('Finished loading model!')
 
     # fuse conv bn
     if args.fuse_conv_bn:
