@@ -166,7 +166,7 @@ def train():
     # start training loop
     for epoch in range(max_epoch):
         if args.distributed:
-            dataloader.sampler.set_epoch(epoch)            
+            dataloader.batch_sampler.sampler.set_epoch(epoch)            
 
         # train one epoch
         for iter_i, (images, targets, masks) in enumerate(dataloader):
