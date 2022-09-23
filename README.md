@@ -53,10 +53,8 @@ You can change the configurations of `train_ddp.sh`, according to your own situa
 ```Shell
 python test.py -d coco \
                --cuda \
-               -v yolof50 \
+               -v yolof-r50 \
                --weight path/to/weight \
-               --min_size 800 \
-               --max_size 1333 \
                --root path/to/dataset/ \
                --show
 ```
@@ -67,11 +65,9 @@ I have provide some images in `data/demo/images/`, so you can run following comm
 ```Shell
 python demo.py --mode image \
                --path_to_img data/demo/images/ \
-               -v yolof50 \
+               -v yolof-r50 \
                --cuda \
                --weight path/to/weight \
-               --min_size 800 \
-               --max_size 1333 \
                --show
 ```
 
@@ -80,11 +76,9 @@ If you want run a demo of streaming video detection, you need to set `--mode` to
 ```Shell
 python demo.py --mode video \
                --path_to_img data/demo/videos/your_video \
-               -v yolof50 \
+               -v yolof-r50 \
                --cuda \
                --weight path/to/weight \
-               --min_size 800 \
-               --max_size 1333 \
                --show
 ```
 
@@ -92,10 +86,8 @@ If you want run video detection with your camera, you need to set `--mode` to `c
 
 ```Shell
 python demo.py --mode camera \
-               -v yolof50 \
+               -v yolof-r50 \
                --cuda \
                --weight path/to/weight \
-               --min_size 800 \
-               --max_size 1333 \
                --show
 ```
