@@ -9,7 +9,7 @@ from evaluator.coco_evaluator import COCOAPIEvaluator
 from data.transforms import ValTransforms
 from config.yolof_config import yolof_config
 
-from utils.misc import TestTimeAugmentation
+from utils.misc import load_weight
 
 from models.yolof import build_model
 
@@ -119,13 +119,12 @@ if __name__ == '__main__':
                         trainable=False,
                         eval_mode=True)
 
-    # load weight
-    model.load_state_dict(torch.load(args.weight, map_location='cpu'), strict=False)
-    model = model.to(device).eval()
+    # load trained weight
+    model = load_weight(device=device, 
+                        model=model, 
+                        path_to_ckpt=args.weight)
+    model.eval()
     print('Finished loading model!')
-
-    # TTA
-    test_aug = TestTimeAugmentation(num_classes=num_classes) if args.test_aug else None
 
     # transform
     transform = ValTransforms(min_size=cfg['test_min_size'], 

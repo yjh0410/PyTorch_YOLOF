@@ -1,16 +1,11 @@
 from torch import optim
 
 
-def build_optimizer(model,
-                    base_lr=0.0,
-                    backbone_lr=0.0,
-                    name='sgd',
-                    momentum=0.,
-                    weight_decay=0.):
+def build_optimizer(cfg, model, base_lr=0.0, backbone_lr=0.0):
     print('==============================')
-    print('Optimizer: {}'.format(name))
-    print('--momentum: {}'.format(momentum))
-    print('--weight_decay: {}'.format(weight_decay))
+    print('Optimizer: {}'.format(cfg['optimizer']))
+    print('--momentum: {}'.format(cfg['momentum']))
+    print('--weight_decay: {}'.format(cfg['weight_decay']))
 
     if base_lr == backbone_lr:
         param_dicts = model.parameters()
@@ -23,20 +18,26 @@ def build_optimizer(model,
             },
         ]
 
-    if name == 'sgd':
-        optimizer = optim.SGD(param_dicts, 
-                                lr=base_lr,
-                                momentum=momentum,
-                                weight_decay=weight_decay)
+    if cfg['optimizer'] == 'sgd':
+        optimizer = optim.SGD(
+            params=param_dicts, 
+            lr=base_lr,
+            momentum=cfg['momentum'],
+            weight_decay=cfg['weight_decay']
+            )
 
-    elif name == 'adam':
-        optimizer = optim.Adam(param_dicts, 
-                                lr=base_lr,
-                                weight_decay=weight_decay)
+    elif cfg['optimizer'] == 'adam':
+        optimizer = optim.Adam(
+            params=param_dicts, 
+            lr=base_lr,
+            weight_decay=cfg['weight_decay']
+            )
                                 
-    elif name == 'adamw':
-        optimizer = optim.AdamW(param_dicts, 
-                                lr=base_lr,
-                                weight_decay=weight_decay)
+    elif cfg['optimizer'] == 'adamw':
+        optimizer = optim.AdamW(
+            params=param_dicts, 
+            lr=base_lr,
+            weight_decay=cfg['weight_decay']
+            )
                                 
     return optimizer

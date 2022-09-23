@@ -6,8 +6,9 @@ import numpy as np
 import torch
 
 from config.yolof_config import yolof_config
-from data.coco import coco_class_index, coco_class_labels, COCODataset
+from data.coco import coco_class_index, coco_class_labels
 from data.transforms import ValTransforms
+from utils.misc import load_weight
 
 from models.yolof import build_model
 
@@ -38,7 +39,7 @@ def parse_args():
 
     # model
     parser.add_argument('-v', '--version', default='yolof50', choices=['yolof18', 'yolof50', 'yolof50-DC5', \
-                                                                       'yolof101', 'yolof101-DC5', 'yolof53', 'yolof53-DC5'],
+                                                                       'yolof101', 'yolof101-DC5', 'yolof53'],
                         help='build yolof')
     parser.add_argument('--weight', default='weight/',
                         type=str, help='Trained state_dict file path to open')
@@ -236,10 +237,13 @@ def run():
                         num_classes=80, 
                         trainable=False)
 
-    # load weight
-    model.load_state_dict(torch.load(args.weight, map_location='cpu'), strict=False)
-    model = model.to(device).eval()
+    # load trained weight
+    model = load_weight(device=device, 
+                        model=model, 
+                        path_to_ckpt=args.weight)
+    model.eval()
     print('Finished loading model!')
+
     # transform
     transform = ValTransforms(
         test_min_size=cfg['test_min_size'],

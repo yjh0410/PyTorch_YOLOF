@@ -140,13 +140,7 @@ def train():
     criterion = build_criterion(args=args, device=device, cfg=cfg, num_classes=num_classes)
     
     # build model
-    model = build_model(
-        args=args, 
-        cfg=cfg,
-        device=device, 
-        num_classes=num_classes, 
-        trainable=True
-        )
+    model = build_model(args=args, cfg=cfg, device=device, num_classes=num_classes, trainable=True)
     model = model.to(device).train()
 
     # DDP
@@ -171,22 +165,14 @@ def train():
     # optimizer
     base_lr = cfg['base_lr'] * args.batch_size * distributed_utils.get_world_size()
     backbone_lr = base_lr * cfg['bk_lr_ratio']
-    optimizer = build_optimizer(model=model_without_ddp,
-                                base_lr=base_lr,
-                                backbone_lr=backbone_lr,
-                                name=cfg['optimizer'],
-                                momentum=cfg['momentum'],
-                                weight_decay=cfg['weight_decay'])
+    optimizer = build_optimizer(cfg, model_without_ddp, base_lr, backbone_lr)
     
     # lr scheduler
-    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizer, 
-                                                        milestones=cfg['epoch'][args.schedule]['lr_epoch'])
+    lr_epoch = cfg['epoch'][args.schedule]['lr_epoch']
+    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizer, milestones=lr_epoch)
 
     # warmup scheduler
-    warmup_scheduler = build_warmup(name=cfg['warmup'],
-                                    base_lr=base_lr,
-                                    wp_iter=cfg['wp_iter'],
-                                    warmup_factor=cfg['warmup_factor'])
+    warmup_scheduler = build_warmup(cfg, base_lr)
 
     # training configuration
     max_epoch = cfg['epoch'][args.schedule]['max_epoch']

@@ -9,7 +9,7 @@ from config.yolof_config import yolof_config
 from data.voc import VOC_CLASSES, VOCDetection
 from data.coco import coco_class_index, coco_class_labels, COCODataset
 from data.transforms import ValTransforms
-from utils.misc import TestTimeAugmentation
+from utils.misc import load_weight
 
 from models.yolof import build_model
 
@@ -208,9 +208,11 @@ if __name__ == '__main__':
                         num_classes=num_classes, 
                         trainable=False)
 
-    # load weight
-    model.load_state_dict(torch.load(args.weight, map_location='cpu'), strict=False)
-    model = model.to(device).eval()
+    # load trained weight
+    model = load_weight(device=device, 
+                        model=model, 
+                        path_to_ckpt=args.weight)
+    model.eval()
     print('Finished loading model!')
 
     # transform
