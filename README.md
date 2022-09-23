@@ -22,18 +22,18 @@ We suggest that PyTorch should be higher than 1.9.0 and Torchvision should be hi
 
 # Main results on COCO-val
 
-| Model                                       |  scale     |   mAP   | Weight|
-|---------------------------------------------|------------|---------|-------|
-| YOLOF_R_18_C5_1x                            |  800,1333  |  31.9   | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof_R_18_C5_1x_31.9.pth) |
-| YOLOF_R_50_C5_1x                            |  800,1333  |  37.3   | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof_R_50_C5_1x_37.3.pth) |
-| YOLOF_R_50_DC5_1x                           |  800,1333  |         |       |
-| YOLOF_R_101_C5_1x                           |  800,1333  |         |       |
-| YOLOF_R_101_DC5_1x                          |  800,1333  |         |       |
-| YOLOF_R_50_DC5_640_3x                       |  640,640   |  37.7   | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof_R_50_DC5_640_3x_37.7.pth) |
+| Model                 |  scale     |   AP   |  AP50  | Weight |
+|-----------------------|------------|--------|--------|--------|
+| YOLOF_R18_C5_1x       |  800,1333  |  32.2  |  50.7  | [github]() |
+| YOLOF_R50_C5_1x       |  800,1333  |    |    | [github]() |
+| YOLOF_R50_DC5_1x      |  800,1333  |        |        | [github]() |
+| YOLOF_R101_C5_1x      |  800,1333  |        |        | [github]() |
+| YOLOF_R101_DC5_1x     |  800,1333  |        |        | [github]() |
+| YOLOF_R50-RT_3x       |  800,1333  |        |        | [github]() |
 
-Limited by my computing resources, I cannot provide other weights files of `YOLOF_R_50_DC5_1x`, `YOLOF_R_101_C5_1x`and `YOLOF_R_101_DC5_1x`.
+<!-- Limited by my computing resources, I cannot provide other weights files of `YOLOF_R_50_DC5_1x`, `YOLOF_R_101_C5_1x`and `YOLOF_R_101_DC5_1x`.
 I would be very grateful if you used this project to train the above models and would like to open source the weights files.
-
+ -->
 # Train
 ## Single GPU
 ```Shell
