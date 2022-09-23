@@ -302,31 +302,39 @@ if __name__ == "__main__":
                     {'name': 'ToTensor'},
                     {'name': 'Resize'},
                     {'name': 'Normalize'}]
-    min_size = 800
-    max_size = 1333
-    random_size = [400, 600, 800]
-    transform = TrainTransforms(trans_config=trans_config,
-                                min_size=min_size,
-                                max_size=max_size,
-                                random_size=random_size,
-                                pixel_mean=pixel_mean,
-                                pixel_std=pixel_std,
-                                format=format)
-    color_augment = BaseTransforms(min_size=max_size,
-                                   max_size=max_size,
-                                   random_size=random_size,
-                                   pixel_mean=pixel_mean,
-                                   pixel_std=pixel_std,
-                                   format=format)
+    min_size = 512
+    max_size = 736
+    random_size = [320, 512, 640]
+    min_box_size = 8
+    transform = TrainTransforms(
+        trans_config=trans_config,
+        min_size=min_size,
+        max_size=max_size,
+        random_size=random_size,
+        min_box_size=min_box_size,
+        pixel_mean=pixel_mean,
+        pixel_std=pixel_std,
+        format=format)
+    color_augment = BaseTransforms(
+        min_size=max_size,
+        max_size=max_size,
+        random_size=random_size,
+        min_box_size=min_box_size,
+        pixel_mean=pixel_mean,
+        pixel_std=pixel_std,
+        format=format
+        )
     pixel_mean = np.array(pixel_mean, dtype=np.float32)
     pixel_std = np.array(pixel_std, dtype=np.float32)
 
-    dataset = COCODataset(img_size=max_size,
-                          data_dir='/mnt/share/ssd2/dataset/COCO',
-                          image_set='train2017',
-                          transform=transform,
-                          color_augment=color_augment,
-                          mosaic=True)
+    dataset = COCODataset(
+        img_size=max_size,
+        data_dir='/mnt/share/ssd2/dataset/COCO',
+        image_set='train2017',
+        transform=transform,
+        color_augment=color_augment,
+        mosaic=True
+        )
     
     np.random.seed(0)
     class_colors = [(np.random.randint(255),

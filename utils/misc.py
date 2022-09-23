@@ -87,54 +87,70 @@ def build_dataset(cfg, args, device):
     trans_config = cfg['transforms'][args.schedule]
     print('==============================')
     print('TrainTransforms: {}'.format(trans_config))
-    train_transform = TrainTransforms(trans_config=trans_config,
-                                      min_size=cfg['train_min_size'],
-                                      max_size=cfg['train_max_size'],
-                                      random_size=cfg['epoch'][args.schedule]['multi_scale'],
-                                      pixel_mean=cfg['pixel_mean'],
-                                      pixel_std=cfg['pixel_std'],
-                                      format=cfg['format'])
-    val_transform = ValTransforms(min_size=cfg['test_min_size'],
-                                  max_size=cfg['test_max_size'],
-                                  pixel_mean=cfg['pixel_mean'],
-                                  pixel_std=cfg['pixel_std'],
-                                  format=cfg['format'])
-    color_augment = BaseTransforms(min_size=cfg['train_min_size'],
-                                   max_size=cfg['train_max_size'],
-                                   random_size=cfg['epoch'][args.schedule]['multi_scale'],
-                                   pixel_mean=cfg['pixel_mean'],
-                                   pixel_std=cfg['pixel_std'],
-                                   format=cfg['format'])
+    train_transform = TrainTransforms(
+        trans_config=trans_config,
+        min_size=cfg['train_min_size'],
+        max_size=cfg['train_max_size'],
+        random_size=cfg['epoch'][args.schedule]['multi_scale'],
+        min_box_size=cfg['min_box_size'],
+        pixel_mean=cfg['pixel_mean'],
+        pixel_std=cfg['pixel_std'],
+        format=cfg['format']
+        )
+    val_transform = ValTransforms(
+        min_size=cfg['test_min_size'],
+        max_size=cfg['test_max_size'],
+        pixel_mean=cfg['pixel_mean'],
+        pixel_std=cfg['pixel_std'],
+        format=cfg['format']
+        )
+    color_augment = BaseTransforms(
+        min_size=cfg['train_min_size'],
+        max_size=cfg['train_max_size'],
+        random_size=cfg['epoch'][args.schedule]['multi_scale'],
+        min_box_size=cfg['min_box_size'],
+        pixel_mean=cfg['pixel_mean'],
+        pixel_std=cfg['pixel_std'],
+        format=cfg['format']
+        )
+
     # dataset
-    
     if args.dataset == 'voc':
         data_dir = os.path.join(args.root, 'VOCdevkit')
         num_classes = 20
         # dataset
-        dataset = VOCDetection(img_size=cfg['train_max_size'],
-                               data_dir=data_dir, 
-                               transform=train_transform,
-                               color_augment=color_augment,
-                               mosaic=cfg['mosaic'])
+        dataset = VOCDetection(
+            img_size=cfg['train_max_size'],
+            data_dir=data_dir, 
+            transform=train_transform,
+            color_augment=color_augment,
+            mosaic=cfg['mosaic']
+            )
         # evaluator
-        evaluator = VOCAPIEvaluator(data_dir=data_dir,
-                                    device=device,
-                                    transform=val_transform)
+        evaluator = VOCAPIEvaluator(
+            data_dir=data_dir,
+            device=device,
+            transform=val_transform
+            )
 
     elif args.dataset == 'coco':
         data_dir = os.path.join(args.root, 'COCO')
         num_classes = 80
         # dataset
-        dataset = COCODataset(img_size=cfg['train_max_size'],
-                              data_dir=data_dir,
-                              image_set='train2017',
-                              transform=train_transform,
-                              color_augment=color_augment,
-                              mosaic=cfg['mosaic'])
+        dataset = COCODataset(
+            img_size=cfg['train_max_size'],
+            data_dir=data_dir,
+            image_set='train2017',
+            transform=train_transform,
+            color_augment=color_augment,
+            mosaic=cfg['mosaic']
+            )
         # evaluator
-        evaluator = COCOAPIEvaluator(data_dir=data_dir,
-                                     device=device,
-                                     transform=val_transform)
+        evaluator = COCOAPIEvaluator(
+            data_dir=data_dir,
+            device=device,
+            transform=val_transform
+            )
     
     else:
         print('unknow dataset !! Only support voc and coco !!')

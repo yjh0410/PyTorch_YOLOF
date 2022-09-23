@@ -11,6 +11,7 @@ yolof_config = {
         'format': 'RGB',
         'pixel_mean': [123.675, 116.28, 103.53],
         'pixel_std': [58.395, 57.12, 57.375],
+        'min_box_size': 8,
         'mosaic': False,
         'transforms': {
             '1x':[{'name': 'RandomHorizontalFlip'},
@@ -91,6 +92,7 @@ yolof_config = {
         'format': 'RGB',
         'pixel_mean': [123.675, 116.28, 103.53],
         'pixel_std': [58.395, 57.12, 57.375],
+        'min_box_size': 8,
         'mosaic': False,
         'transforms': {
             '1x':[{'name': 'RandomHorizontalFlip'},
@@ -171,6 +173,7 @@ yolof_config = {
         'format': 'RGB',
         'pixel_mean': [123.675, 116.28, 103.53],
         'pixel_std': [58.395, 57.12, 57.375],
+        'min_box_size': 8,
         'mosaic': True,
         'transforms': {
             '3x':[{'name': 'DistortTransform',

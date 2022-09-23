@@ -6,6 +6,36 @@ import torchvision.transforms as T
 import torchvision.transforms.functional as F
 
 
+def refine_targets(target, min_box_size):
+    # check target
+    valid_bboxes = []
+    valid_labels = []
+    target_bboxes = target['boxes'].clone()
+    target_labels = target['labels'].clone()
+
+    if len(target_bboxes) > 0:
+        # check boxes
+        target_bboxes_wh = target_bboxes[..., 2:] - target_bboxes[..., :2]
+        min_tgt_boxes_size = torch.min(target_bboxes_wh, dim=-1)[0]
+
+        keep = (min_tgt_boxes_size > min_box_size)
+
+        valid_bboxes = target_bboxes[keep]
+        valid_labels = target_labels[keep]
+        
+    else:
+        valid_bboxes = target_bboxes
+        valid_labels = target_labels
+
+    # guard against no boxes via resizing
+    valid_bboxes = valid_bboxes.reshape(-1, 4)
+    valid_labels = valid_labels.reshape(-1)
+
+    target['boxes'] = valid_bboxes
+    target['labels'] = valid_labels
+
+    return target
+
 
 class Compose(object):
     """Composes several augmentations together.
@@ -303,6 +333,7 @@ class BaseTransforms(object):
     def __init__(self, 
                  min_size=800, 
                  max_size=1333, 
+                 min_box_size=8,
                  random_size=None, 
                  pixel_mean=(123.675, 116.28, 103.53), 
                  pixel_std=(58.395, 57.12, 57.375),
@@ -313,6 +344,7 @@ class BaseTransforms(object):
         self.pixel_std = pixel_std
         self.format = format
         self.random_size =random_size
+        self.min_box_size = min_box_size
         self.transforms = Compose([
             DistortTransform(),
             RandomHorizontalFlip(),
@@ -325,7 +357,9 @@ class BaseTransforms(object):
 
 
     def __call__(self, image, target):
-        return self.transforms(image, target)
+        image, target = self.transforms(image, target)
+        target = refine_targets(target, self.min_box_size)
+        return image, target
 
 
 # TrainTransform
@@ -333,7 +367,8 @@ class TrainTransforms(object):
     def __init__(self, 
                  trans_config=None,
                  min_size=800, 
-                 max_size=1333, 
+                 max_size=1333,
+                 min_box_size=8,
                  random_size=None, 
                  pixel_mean=(123.675, 116.28, 103.53), 
                  pixel_std=(58.395, 57.12, 57.375),
@@ -345,6 +380,7 @@ class TrainTransforms(object):
         self.pixel_std = pixel_std
         self.format = format
         self.random_size =random_size
+        self.min_box_size = min_box_size
         self.transforms = Compose(self.build_transforms(trans_config))
 
 
@@ -375,7 +411,9 @@ class TrainTransforms(object):
 
 
     def __call__(self, image, target):
-        return self.transforms(image, target)
+        image, target = self.transforms(image, target)
+        target = refine_targets(target, self.min_box_size)
+        return image, target
 
 
 # ValTransform
