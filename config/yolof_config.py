@@ -126,7 +126,7 @@ yolof_config = {
         'bk_act_type': 'relu',
         'bk_norm_type': 'FrozeBN',
         # encoder
-        'dilation_list': [1, 2, 4, 6, 8],
+        'dilation_list': [2, 4, 6, 8],
         'encoder_dim': 512,
         'expand_ratio': 0.25,
         'encoder_act_type': 'relu',
