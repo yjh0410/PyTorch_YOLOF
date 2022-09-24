@@ -15,7 +15,9 @@ from models.yolof import build_model
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='YOLOF Detection')
+    parser = argparse.ArgumentParser(description='YOLOF Evaluation')
+    parser.add_argument('--cuda', action='store_true', default=False, 
+                        help='use cuda.')
     # model
     parser.add_argument('-v', '--version', default='yolof50',
                         choices=['yolof-r18', 'yolof-r50', 'yolof-r50-DC5', 'yolof-r101', 'yolof-r101-DC5', 'yolof-r50-RT'],
