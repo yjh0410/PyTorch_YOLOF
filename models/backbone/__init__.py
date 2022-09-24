@@ -10,7 +10,7 @@ def build_backbone(cfg, pretrained=False):
         model, feat_dim = build_resnet(
             model_name=cfg['backbone'], 
             pretrained=pretrained,
-            norm_type=cfg['norm_type'],
+            norm_type=cfg['bk_norm_type'],
             res5_dilation=cfg['res5_dilation']
             )
 

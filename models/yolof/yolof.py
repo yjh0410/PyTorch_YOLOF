@@ -37,10 +37,10 @@ class YOLOF(nn.Module):
         self.backbone, bk_dim = build_backbone(cfg=cfg, pretrained=trainable)
 
         ## neck
-        self.neck = build_encoder(cfg=cfg, in_dim=bk_dim, out_dim=cfg['head_dim'])
+        self.neck = build_encoder(cfg=cfg, in_dim=bk_dim, out_dim=cfg['encoder_dim'])
                                      
         ## head
-        self.head = build_decoder(cfg, cfg['head_dim'], num_classes, self.num_anchors)
+        self.head = build_decoder(cfg, cfg['encoder_dim'], num_classes, self.num_anchors)
 
 
     def generate_anchors(self, fmp_size):

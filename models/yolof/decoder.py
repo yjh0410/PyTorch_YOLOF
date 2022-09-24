@@ -8,15 +8,15 @@ DEFAULT_EXP_CLAMP = math.log(1e8)
 
 
 class NaiveHead(nn.Module):
-    def __init__(self, head_dim=256, num_cls_heads=1, num_reg_heads=1, act_type='relu'):
+    def __init__(self, head_dim=256, num_cls_heads=1, num_reg_heads=1, act_type='relu', norm_type='BN'):
         super().__init__()
         self.head_dim = head_dim
 
         self.cls_feats = nn.Sequential(*[
-            Conv(head_dim, head_dim, k=3, p=1, act_type=act_type)
+            Conv(head_dim, head_dim, k=3, p=1, act_type=act_type, norm_type=norm_type)
             for _ in range(num_cls_heads)])
         self.reg_feats = nn.Sequential(*[
-            Conv(head_dim, head_dim, k=3, p=1, act_type=act_type)
+            Conv(head_dim, head_dim, k=3, p=1, act_type=act_type, norm_type=norm_type)
             for _ in range(num_reg_heads)])
 
         self._init_weight()
@@ -46,7 +46,7 @@ class NaiveHead(nn.Module):
 
 
 class DecoupledHead(nn.Module):
-    def __init__(self, cfg, head_dim=512, num_classes=80, num_anchors=1):
+    def __init__(self, cfg, head_dim=512, num_classes=80, num_anchors=1, act_type='relu', norm_type='BN'):
         super().__init__()
         self.num_classes = num_classes
         self.head_dim = head_dim
@@ -55,8 +55,7 @@ class DecoupledHead(nn.Module):
         print('Head: {}'.format(cfg['head']))
 
         # feature stage
-        if cfg['head'] == 'naive_head':
-            self.head = NaiveHead(head_dim, cfg['num_cls_heads'], cfg['num_reg_heads'], cfg['act_type'])
+        self.head = NaiveHead(head_dim, cfg['num_cls_heads'], cfg['num_reg_heads'], act_type, norm_type)
 
         # prediction stage
         self.obj_pred = nn.Conv2d(head_dim, 1 * num_anchors, kernel_size=3, padding=1)
@@ -113,7 +112,14 @@ class DecoupledHead(nn.Module):
 
 # build decoder
 def build_decoder(cfg, in_dim, num_classes, num_anchors):
-    head = DecoupledHead(cfg, in_dim, num_classes, num_anchors)
+    head = DecoupledHead(
+        cfg=cfg,
+        head_dim=in_dim,
+        num_classes=num_classes,
+        num_anchors=num_anchors,
+        act_type=cfg['decoder_act_type'],
+        norm_type=cfg['decoder_norm_type']
+        )
 
     return head
     

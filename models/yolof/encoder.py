@@ -9,13 +9,14 @@ class Bottleneck(nn.Module):
                  in_dim, 
                  dilation=1, 
                  expand_ratio=0.25,
-                 act_type='relu'):
+                 act_type='relu',
+                 norm_type='BN'):
         super(Bottleneck, self).__init__()
         inter_dim = int(in_dim * expand_ratio)
         self.branch = nn.Sequential(
-            Conv(in_dim, inter_dim, k=1, act_type=act_type),
-            Conv(inter_dim, inter_dim, k=3, p=dilation, d=dilation, act_type=act_type),
-            Conv(inter_dim, in_dim, k=1, act_type=act_type)
+            Conv(in_dim, inter_dim, k=1, act_type=act_type, norm_type=norm_type),
+            Conv(inter_dim, inter_dim, k=3, p=dilation, d=dilation, act_type=act_type, norm_type=norm_type),
+            Conv(inter_dim, in_dim, k=1, act_type=act_type, norm_type=norm_type)
         )
 
     def forward(self, x):
@@ -29,18 +30,20 @@ class DilatedEncoder(nn.Module):
                  out_dim, 
                  expand_ratio=0.25, 
                  dilation_list=[2, 4, 6, 8],
-                 act_type='relu'):
+                 act_type='relu',
+                 norm_type='BN'):
         super(DilatedEncoder, self).__init__()
         self.projector = nn.Sequential(
-            Conv(in_dim, out_dim, k=1, act_type=None),
-            Conv(out_dim, out_dim, k=3, p=1, act_type=None)
+            Conv(in_dim, out_dim, k=1, act_type=None, norm_type=norm_type),
+            Conv(out_dim, out_dim, k=3, p=1, act_type=None, norm_type=norm_type)
         )
         encoders = []
         for d in dilation_list:
             encoders.append(Bottleneck(in_dim=out_dim, 
                                        dilation=d, 
                                        expand_ratio=expand_ratio, 
-                                       act_type=act_type))
+                                       act_type=act_type,
+                                       norm_type=norm_type))
         self.encoders = nn.Sequential(*encoders)
 
         self._init_weight()
@@ -73,15 +76,16 @@ class DilatedEncoder(nn.Module):
 
 # build encoder
 def build_encoder(cfg, in_dim, out_dim):
-    model = cfg['neck']
     print('==============================')
-    print('Neck: {}'.format(model))
-    # build neck
-    if model == 'dilated_encoder':
-        neck = DilatedEncoder(in_dim, 
-                              out_dim, 
-                              expand_ratio=cfg['expand_ratio'], 
-                              dilation_list=cfg['dilation_list'],
-                              act_type=cfg['act_type'])
+    print('Neck: {}'.format('Dilated Encoder'))
+    
+    neck = DilatedEncoder(
+        in_dim=in_dim,
+        out_dim=out_dim,
+        expand_ratio=cfg['expand_ratio'],
+        dilation_list=cfg['dilation_list'],
+        act_type=cfg['encoder_act_type'],
+        norm_type=cfg['encoder_norm_type']
+        )
 
     return neck
