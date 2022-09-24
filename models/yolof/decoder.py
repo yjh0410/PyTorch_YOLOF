@@ -52,7 +52,7 @@ class DecoupledHead(nn.Module):
         self.head_dim = head_dim
 
         print('==============================')
-        print('Head: {}'.format(cfg['head']))
+        print('Head: {}'.format('Decoupled Head'))
 
         # feature stage
         self.head = NaiveHead(head_dim, cfg['num_cls_heads'], cfg['num_reg_heads'], act_type, norm_type)
