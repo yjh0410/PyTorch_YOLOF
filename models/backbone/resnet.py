@@ -4,9 +4,13 @@ Backbone modules.
 """
 
 import torch
-import torchvision
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
+
+try:
+    from .vision import model_resnet
+except:
+    from vision import model_resnet
 
 
 class FrozenBatchNorm2d(torch.nn.Module):
@@ -78,7 +82,7 @@ class Backbone(BackboneBase):
             norm_layer = nn.BatchNorm2d
         elif norm_type == 'FrozeBN':
             norm_layer = FrozenBatchNorm2d
-        backbone = getattr(torchvision.models, name)(
+        backbone = getattr(model_resnet, name)(
             replace_stride_with_dilation=[False, False, dilation],
             pretrained=pretrained, norm_layer=norm_layer)
         num_channels = 512 if name in ('resnet18', 'resnet34') else 2048
