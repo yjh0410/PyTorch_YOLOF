@@ -1,5 +1,6 @@
 import torch
 from .yolof import YOLOF
+from .criterion import build_criterion
 
 
 # build YOLOF detector
@@ -24,6 +25,7 @@ def build_model(args,
             conf_thresh = cfg['conf_thresh']
             nms_thresh = cfg['nms_thresh']
 
+    # ----------- Model ------------ #
     model = YOLOF(cfg=cfg,
                   device=device, 
                   num_classes=num_classes, 
@@ -52,4 +54,10 @@ def build_model(args,
 
         model.load_state_dict(checkpoint_state_dict, strict=False)
                         
+    # ----------- Criterion ------------ #
+    if trainable:
+        criterion = build_criterion(args=args, device=device, cfg=cfg, num_classes=num_classes)
+
+        return model, criterion
+
     return model

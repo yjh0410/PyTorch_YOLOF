@@ -8,20 +8,16 @@ DEFAULT_EXP_CLAMP = math.log(1e8)
 
 
 class NaiveHead(nn.Module):
-    def __init__(self, head_dim=256, act_type='relu'):
+    def __init__(self, head_dim=256, num_cls_heads=1, num_reg_heads=1, act_type='relu'):
         super().__init__()
         self.head_dim = head_dim
 
-        self.cls_feats = nn.Sequential(
-            Conv(head_dim, head_dim, k=3, p=1, act_type=act_type),
+        self.cls_feats = nn.Sequential(*[
             Conv(head_dim, head_dim, k=3, p=1, act_type=act_type)
-        )
-        self.reg_feats = nn.Sequential(
-            Conv(head_dim, head_dim, k=3, p=1, act_type=act_type),
-            Conv(head_dim, head_dim, k=3, p=1, act_type=act_type),
-            Conv(head_dim, head_dim, k=3, p=1, act_type=act_type),
+            for _ in range(num_cls_heads)])
+        self.reg_feats = nn.Sequential(*[
             Conv(head_dim, head_dim, k=3, p=1, act_type=act_type)
-        )
+            for _ in range(num_reg_heads)])
 
         self._init_weight()
 
@@ -60,7 +56,7 @@ class DecoupledHead(nn.Module):
 
         # feature stage
         if cfg['head'] == 'naive_head':
-            self.head = NaiveHead(head_dim, cfg['act_type'])
+            self.head = NaiveHead(head_dim, cfg['num_cls_heads'], cfg['num_reg_heads'], cfg['act_type'])
 
         # prediction stage
         self.obj_pred = nn.Conv2d(head_dim, 1 * num_anchors, kernel_size=3, padding=1)
@@ -115,7 +111,8 @@ class DecoupledHead(nn.Module):
         return normalized_cls_pred, reg_pred
 
 
-def build_head(cfg, in_dim, num_classes, num_anchors):
+# build decoder
+def build_decoder(cfg, in_dim, num_classes, num_anchors):
     head = DecoupledHead(cfg, in_dim, num_classes, num_anchors)
 
     return head

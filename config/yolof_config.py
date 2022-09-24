@@ -49,6 +49,8 @@ yolof_config = {
         # head
         'head_dim': 512,
         'head': 'naive_head',
+        'num_cls_heads': 2,
+        'num_reg_heads': 4,
         # post process
         'conf_thresh': 0.1,
         'nms_thresh': 0.5,
@@ -130,6 +132,8 @@ yolof_config = {
         # head
         'head_dim': 512,
         'head': 'naive_head',
+        'num_cls_heads': 2,
+        'num_reg_heads': 4,
         # post process
         'conf_thresh': 0.1,
         'nms_thresh': 0.5,
@@ -199,6 +203,8 @@ yolof_config = {
         # head
         'head_dim': 512,
         'head': 'naive_head',
+        'num_cls_heads': 2,
+        'num_reg_heads': 4,
         # post process
         'conf_thresh': 0.1,
         'nms_thresh': 0.5,

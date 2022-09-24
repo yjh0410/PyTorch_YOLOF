@@ -17,8 +17,6 @@ from utils.solver.optimizer import build_optimizer
 from utils.solver.warmup_schedule import build_warmup
 
 from models.yolof import build_model
-from models.yolof.criterion import build_criterion
-
 from config.yolof_config import yolof_config
 
 
@@ -117,12 +115,9 @@ def train():
 
     # dataloader
     dataloader = build_dataloader(args, dataset, args.batch_size, CollateFunc())
-
-    # criterion
-    criterion = build_criterion(args=args, device=device, cfg=cfg, num_classes=num_classes)
     
-    # build model
-    model = build_model(args=args, cfg=cfg, device=device, num_classes=num_classes, trainable=True)
+    # build model & criterion
+    model, criterion = build_model(args=args, cfg=cfg, device=device, num_classes=num_classes, trainable=True)
     model = model.to(device).train()
 
     # DDP
