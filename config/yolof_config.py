@@ -38,19 +38,21 @@ yolof_config = {
                   {'name': 'Normalize'}]},
         # model
         'backbone': 'resnet18',
-        'norm_type': 'FrozeBN',
         'res5_dilation': False,
         'stride': 32,
-        'act_type': 'relu',
-        # neck
-        'neck': 'dilated_encoder',
+        'bk_act_type': 'relu',
+        'bk_norm_type': 'FrozeBN',
+        # encoder
         'dilation_list': [2, 4, 6, 8],
+        'encoder_dim': 512,
         'expand_ratio': 0.25,
-        # head
-        'head_dim': 512,
-        'head': 'naive_head',
+        'encoder_act_type': 'relu',
+        'encoder_norm_type': 'BN',
+        # decoder
         'num_cls_heads': 2,
         'num_reg_heads': 4,
+        'decoder_act_type': 'relu',
+        'decoder_norm_type': 'BN',
         # post process
         'conf_thresh': 0.1,
         'nms_thresh': 0.5,
