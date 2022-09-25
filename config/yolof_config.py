@@ -172,6 +172,91 @@ yolof_config = {
         },
     },
 
+    'yolof-r50-DC5': {
+        # input
+        'train_min_size': 800,
+        'train_max_size': 1333,
+        'test_min_size': 800,
+        'test_max_size': 1333,
+        'format': 'RGB',
+        'pixel_mean': [123.675, 116.28, 103.53],
+        'pixel_std': [58.395, 57.12, 57.375],
+        'min_box_size': 8,
+        'mosaic': False,
+        'transforms': {
+            '1x':[{'name': 'RandomHorizontalFlip'},
+                  {'name': 'RandomShift', 'max_shift': 32},
+                  {'name': 'ToTensor'},
+                  {'name': 'Resize'},
+                  {'name': 'Normalize'}],
+
+            '2x':[{'name': 'RandomHorizontalFlip'},
+                  {'name': 'RandomShift', 'max_shift': 32},
+                  {'name': 'ToTensor'},
+                  {'name': 'Resize'},
+                  {'name': 'Normalize'}],
+
+            '3x':[{'name': 'DistortTransform',
+                   'hue': 0.1,
+                   'saturation': 1.5,
+                   'exposure': 1.5},
+                  {'name': 'RandomHorizontalFlip'},
+                  {'name': 'RandomShift', 'max_shift': 32},
+                  {'name': 'JitterCrop', 'jitter_ratio': 0.3},
+                  {'name': 'ToTensor'},
+                  {'name': 'Resize'},
+                  {'name': 'Normalize'}]},
+        # model
+        'backbone': 'resnet50',
+        'res5_dilation': True,
+        'stride': 16,
+        'bk_act_type': 'relu',
+        'bk_norm_type': 'FrozeBN',
+        # encoder
+        'dilation_list': [4, 8, 12, 16],
+        'encoder_dim': 512,
+        'expand_ratio': 0.25,
+        'encoder_act_type': 'relu',
+        'encoder_norm_type': 'BN',
+        # decoder
+        'num_cls_heads': 2,
+        'num_reg_heads': 4,
+        'decoder_act_type': 'relu',
+        'decoder_norm_type': 'BN',
+        # post process
+        'conf_thresh': 0.1,
+        'nms_thresh': 0.5,
+        'conf_thresh_val': 0.05,
+        'nms_thresh_val': 0.6,
+        # anchor box
+        'anchor_size': [[16, 16], [32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
+        # matcher
+        'topk': 4,
+        'iou_t': 0.15,
+        'igt': 0.7,
+        'ctr_clamp': 32,
+        # optimizer
+        'base_lr': 0.12 / 64,
+        'bk_lr_ratio': 1.0 / 3.0,
+        'optimizer': 'sgd',
+        'momentum': 0.9,
+        'weight_decay': 1e-4,
+        'warmup': 'linear',
+        'wp_iter': 1500,
+        'warmup_factor': 0.00066667,
+        'epoch': {
+            '1x': {'max_epoch': 12, 
+                    'lr_epoch': [8, 11], 
+                    'multi_scale': None},
+            '2x': {'max_epoch': 24, 
+                    'lr_epoch': [16, 22], 
+                    'multi_scale': [400, 500, 600, 700, 800]},
+            '3x': {'max_epoch': 36, 
+                    'lr_epoch': [24, 33], 
+                    'multi_scale': [400, 500, 600, 700, 800]},
+        },
+    },
+
     'yolof-r50-RT': {
         # input
         'train_min_size': 512,
