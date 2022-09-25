@@ -10,6 +10,11 @@ try:
 except:
     print("It seems that the COCOAPI is not installed.")
 
+try:
+    from .transforms import mosaic_augment
+except:
+    from transforms import mosaic_augment
+
 
 coco_class_labels = ('background',
                         'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck',
@@ -139,90 +144,8 @@ class COCODataset(Dataset):
             img_lists.append(img_i)
             tg_lists.append(target_i)
 
-        mosaic_img = np.zeros([self.img_size*2, self.img_size*2, img_i.shape[2]], dtype=np.uint8)
-        # mosaic center
-        yc, xc = [int(random.uniform(-x, 2*self.img_size + x)) for x in [-self.img_size // 2, -self.img_size // 2]]
-        # yc = xc = self.img_size
-
-        mosaic_bboxes = []
-        mosaic_labels = []
-        for i in range(4):
-            img_i, target_i = img_lists[i], tg_lists[i]
-            bboxes_i = target_i["boxes"]
-            labels_i = target_i["labels"]
-
-            h0, w0, _ = img_i.shape
-
-            # resize
-            if np.random.randint(2):
-                # keep aspect ratio
-                r = self.img_size / max(h0, w0)
-                if r != 1: 
-                    img_i = cv2.resize(img_i, (int(w0 * r), int(h0 * r)))
-            else:
-                img_i = cv2.resize(img_i, (int(self.img_size), int(self.img_size)))
-            h, w, _ = img_i.shape
-
-            # place img in img4
-            if i == 0:  # top left
-                x1a, y1a, x2a, y2a = max(xc - w, 0), max(yc - h, 0), xc, yc  # xmin, ymin, xmax, ymax (large image)
-                x1b, y1b, x2b, y2b = w - (x2a - x1a), h - (y2a - y1a), w, h  # xmin, ymin, xmax, ymax (small image)
-            elif i == 1:  # top right
-                x1a, y1a, x2a, y2a = xc, max(yc - h, 0), min(xc + w, self.img_size * 2), yc
-                x1b, y1b, x2b, y2b = 0, h - (y2a - y1a), min(w, x2a - x1a), h
-            elif i == 2:  # bottom left
-                x1a, y1a, x2a, y2a = max(xc - w, 0), yc, xc, min(self.img_size * 2, yc + h)
-                x1b, y1b, x2b, y2b = w - (x2a - x1a), 0, w, min(y2a - y1a, h)
-            elif i == 3:  # bottom right
-                x1a, y1a, x2a, y2a = xc, yc, min(xc + w, self.img_size * 2), min(self.img_size * 2, yc + h)
-                x1b, y1b, x2b, y2b = 0, 0, min(w, x2a - x1a), min(y2a - y1a, h)
-
-            mosaic_img[y1a:y2a, x1a:x2a] = img_i[y1b:y2b, x1b:x2b]
-            padw = x1a - x1b
-            padh = y1a - y1b
-
-            # labels
-            bboxes_i_ = bboxes_i.copy()
-            if len(bboxes_i) > 0:
-                # a valid target, and modify it.
-                bboxes_i_[:, 0] = (w * bboxes_i[:, 0] / w0 + padw)
-                bboxes_i_[:, 1] = (h * bboxes_i[:, 1] / h0 + padh)
-                bboxes_i_[:, 2] = (w * bboxes_i[:, 2] / w0 + padw)
-                bboxes_i_[:, 3] = (h * bboxes_i[:, 3] / h0 + padh)    
-
-                mosaic_bboxes.append(bboxes_i_)
-                mosaic_labels.append(labels_i)
-
-
-        valid_bboxes = []
-        valid_labels = []
-        # check target
-        if len(mosaic_bboxes) > 0:
-            mosaic_bboxes = np.concatenate(mosaic_bboxes)
-            mosaic_labels = np.concatenate(mosaic_labels)
-            # Cutout/Clip targets
-            np.clip(mosaic_bboxes, 0, 2 * self.img_size, out=mosaic_bboxes)
-
-            # check boxes
-            for box, label in zip(mosaic_bboxes, mosaic_labels):
-                x1, y1, x2, y2 = box
-                bw, bh = x2 - x1, y2 - y1
-                if bw > 10. and bh > 10.:
-                    valid_bboxes.append([x1, y1, x2, y2])
-                    valid_labels.append(label)
-
-        # guard against no boxes via resizing
-        valid_bboxes = np.array(valid_bboxes).reshape(-1, 4)
-        valid_labels = np.array(valid_labels).reshape(-1)
-        mosaic_bboxes = np.array(valid_bboxes)
-        mosaic_labels = np.array(valid_labels)
-
-        # target
-        mosaic_target = {
-            "boxes": mosaic_bboxes,
-            "labels": mosaic_labels
-        }
-        
+        mosaic_img, mosaic_target = mosaic_augment(img_lists, tg_lists, self.img_size)
+                
         return mosaic_img, mosaic_target
 
 
@@ -328,7 +251,7 @@ if __name__ == "__main__":
     pixel_std = np.array(pixel_std, dtype=np.float32)
 
     dataset = COCODataset(
-        img_size=max_size,
+        img_size=min_size,
         data_dir='/mnt/share/ssd2/dataset/COCO',
         image_set='train2017',
         transform=transform,
@@ -372,17 +295,3 @@ if __name__ == "__main__":
         cv2.imshow('gt', image)
         # cv2.imwrite(str(i)+'.jpg', img)
         cv2.waitKey(0)
-
-        if mask is not None:
-            # to numpy
-            mask = mask.cpu().numpy()
-            mask = (mask * 255).astype(np.uint8).copy()
-
-            boxes = target["boxes"]
-            labels = target["labels"]
-            for box, label in zip(boxes, labels):
-                x1, y1, x2, y2 = box
-                cv2.rectangle(mask, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
-
-            cv2.imshow('mask')
-            cv2.waitKey(0)

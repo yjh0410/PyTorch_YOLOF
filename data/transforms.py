@@ -37,6 +37,77 @@ def refine_targets(target, min_box_size):
     return target
 
 
+def mosaic_augment(image_list, target_list, img_size):
+    mosaic_img = np.zeros([img_size*2, img_size*2, 3], dtype=np.uint8)
+    # mosaic center
+    yc, xc = [int(random.uniform(-x, 2*img_size + x)) for x in [-img_size // 2, -img_size // 2]]
+
+    mosaic_bboxes = []
+    mosaic_labels = []
+    for i in range(4):
+        img_i, target_i = image_list[i], target_list[i]
+        bboxes_i = target_i["boxes"]
+        labels_i = target_i["labels"]
+
+        h0, w0, _ = img_i.shape
+
+        # resize
+        if np.random.randint(2):
+            # keep aspect ratio
+            r = img_size / min(h0, w0)
+            if r != 1: 
+                img_i = cv2.resize(img_i, (int(w0 * r), int(h0 * r)))
+        else:
+            img_i = cv2.resize(img_i, (int(img_size), int(img_size)))
+        h, w, _ = img_i.shape
+
+        # place img in img4
+        if i == 0:  # top left
+            x1a, y1a, x2a, y2a = max(xc - w, 0), max(yc - h, 0), xc, yc  # xmin, ymin, xmax, ymax (large image)
+            x1b, y1b, x2b, y2b = w - (x2a - x1a), h - (y2a - y1a), w, h  # xmin, ymin, xmax, ymax (small image)
+        elif i == 1:  # top right
+            x1a, y1a, x2a, y2a = xc, max(yc - h, 0), min(xc + w, img_size * 2), yc
+            x1b, y1b, x2b, y2b = 0, h - (y2a - y1a), min(w, x2a - x1a), h
+        elif i == 2:  # bottom left
+            x1a, y1a, x2a, y2a = max(xc - w, 0), yc, xc, min(img_size * 2, yc + h)
+            x1b, y1b, x2b, y2b = w - (x2a - x1a), 0, w, min(y2a - y1a, h)
+        elif i == 3:  # bottom right
+            x1a, y1a, x2a, y2a = xc, yc, min(xc + w, img_size * 2), min(img_size * 2, yc + h)
+            x1b, y1b, x2b, y2b = 0, 0, min(w, x2a - x1a), min(y2a - y1a, h)
+
+        mosaic_img[y1a:y2a, x1a:x2a] = img_i[y1b:y2b, x1b:x2b]
+        padw = x1a - x1b
+        padh = y1a - y1b
+
+        # labels
+        bboxes_i_ = bboxes_i.copy()
+        if len(bboxes_i) > 0:
+            # a valid target, and modify it.
+            bboxes_i_[:, 0] = (w * bboxes_i[:, 0] / w0 + padw)
+            bboxes_i_[:, 1] = (h * bboxes_i[:, 1] / h0 + padh)
+            bboxes_i_[:, 2] = (w * bboxes_i[:, 2] / w0 + padw)
+            bboxes_i_[:, 3] = (h * bboxes_i[:, 3] / h0 + padh)    
+
+            mosaic_bboxes.append(bboxes_i_)
+            mosaic_labels.append(labels_i)
+
+    # guard against no boxes via resizing
+    mosaic_bboxes = np.concatenate(mosaic_bboxes).reshape(-1, 4)
+    mosaic_labels = np.concatenate(mosaic_labels).reshape(-1)
+    # check target
+    if len(mosaic_bboxes) > 0:
+        # Cutout/Clip targets
+        np.clip(mosaic_bboxes, 0, 2 * img_size, out=mosaic_bboxes)
+
+    # target
+    mosaic_target = {
+        "boxes": mosaic_bboxes,
+        "labels": mosaic_labels
+    }
+    
+    return mosaic_img, mosaic_target
+
+
 class Compose(object):
     """Composes several augmentations together.
     Args:

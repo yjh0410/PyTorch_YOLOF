@@ -22,14 +22,14 @@ We suggest that PyTorch should be higher than 1.9.0 and Torchvision should be hi
 
 # Main results on COCO-val
 
-| Model                 |  scale     |   AP   |  AP50  | Weight |
-|-----------------------|------------|--------|--------|--------|
-| YOLOF_R18_C5_1x       |  800,1333  |  32.2  |  50.7  | [github]() |
-| YOLOF_R50_C5_1x       |  800,1333  |    |    | [github]() |
-| YOLOF_R50_DC5_1x      |  800,1333  |        |        | [github]() |
-| YOLOF_R101_C5_1x      |  800,1333  |        |        | [github]() |
-| YOLOF_R101_DC5_1x     |  800,1333  |        |        | [github]() |
-| YOLOF_R50-RT_3x       |  800,1333  |        |        | [github]() |
+| Model                 |  scale     |   AP   |  AP50  | Weight |  log  |
+|-----------------------|------------|--------|--------|--------|-------|
+| YOLOF_R18_C5_1x       |  800,1333  |  32.2  |  50.7  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof_r18_C5_1x_32.2.pth) | [log]() |
+| YOLOF_R50_C5_1x       |  800,1333  |  37.2  |  57.0  | [github]() | [log]() |
+| YOLOF_R50_DC5_1x      |  800,1333  |        |        | [github]() | [log]() |
+| YOLOF_R101_C5_1x      |  800,1333  |        |        | [github]() | [log]() |
+| YOLOF_R101_DC5_1x     |  800,1333  |        |        | [github]() | [log]() |
+| YOLOF_R50-RT_3x       |  800,1333  |        |        | [github]() | [log]() |
 
 <!-- Limited by my computing resources, I cannot provide other weights files of `YOLOF_R_50_DC5_1x`, `YOLOF_R_101_C5_1x`and `YOLOF_R_101_DC5_1x`.
 I would be very grateful if you used this project to train the above models and would like to open source the weights files.
