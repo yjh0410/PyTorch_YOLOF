@@ -22,32 +22,61 @@ We suggest that PyTorch should be higher than 1.9.0 and Torchvision should be hi
 
 # Main results on COCO-val
 
-| Model                 |  scale     |   AP   |  AP50  | Weight |  log  |
-|-----------------------|------------|--------|--------|--------|-------|
-| YOLOF_R18_C5_1x       |  800,1333  |  32.2  |  50.7  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof_r18_C5_1x_32.2.pth) | [log](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/YOLOF-R18-COCO.txt) |
-| YOLOF_R50_C5_1x       |  800,1333  |  37.2  |  57.0  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof-r50_C5_1x_37.2.pth) | [log](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/YOLOF-R50-COCO.txt) |
-| YOLOF_R50_DC5_1x      |  800,1333  |        |        | [github]() | [log]() |
-| YOLOF_R101_C5_1x      |  800,1333  |        |        | [github]() | [log]() |
-| YOLOF_R101_DC5_1x     |  800,1333  |        |        | [github]() | [log]() |
-| YOLOF_R50-RT_3x       |  800,1333  |        |        | [github]() | [log]() |
+| Model                 |  scale     |  FPS  |   AP   |  AP50  | Weight |  log  |
+|-----------------------|------------|-------|--------|--------|--------|-------|
+| YOLOF_R18_C5_1x       |  800,1333  |       |  32.2  |  50.7  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof_r18_C5_1x_32.2.pth) | [log](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/YOLOF-R18-COCO.txt) |
+| YOLOF_R50_C5_1x       |  800,1333  |       |  37.2  |  57.0  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof-r50_C5_1x_37.2.pth) | [log](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/YOLOF-R50-COCO.txt) |
+| YOLOF_R50_DC5_1x      |  800,1333  |       |        |        | [github]() | [log]() |
+| YOLOF_R101_C5_1x      |  800,1333  |       |        |        | [github]() | [log]() |
+| YOLOF_R101_DC5_1x     |  800,1333  |       |        |        | [github]() | [log]() |
+| YOLOF_R50-RT_3x       |  800,1333  |       |        |        | [github]() | [log]() |
 
-<!-- Limited by my computing resources, I cannot provide other weights files of `YOLOF_R_50_DC5_1x`, `YOLOF_R_101_C5_1x`and `YOLOF_R_101_DC5_1x`.
-I would be very grateful if you used this project to train the above models and would like to open source the weights files.
- -->
+Limited by my computing resources, I cannot train `YOLOF_R101_C5_1x`, `YOLOF_R101_DC5_1x`.
+I would be very grateful if you used this project to train them and would like to share weight files.
+
 # Train
-## Single GPU
+- Single GPU
+
+You can run the following command:
+```Shell
+python train.py \
+        --cuda \
+        -d coco \
+        --root /mnt/share/ssd2/dataset/ \
+        -v yolof-r50 \
+        --batch_size 16 \
+        --schedule 1x \
+        --grad_clip_norm 4.0 \
+```
+
+or, you just run the script:
 ```Shell
 sh train.sh
 ```
 
 You can change the configurations of `train.sh`, according to your own situation.
 
-## Multi GPUs
+- Multi GPUs
+
+You can run the following command:
+```Shell
+# 2 GPUs
+python -m torch.distributed.run --nproc_per_node=2 train.py \
+                                                    --cuda \
+                                                    -dist \
+                                                    -d coco \
+                                                    --root /mnt/share/ssd2/dataset/ \
+                                                    -v yolof-r50 \
+                                                    --batch_size 8 \
+                                                    --grad_clip_norm 4.0 \
+                                                    --num_workers 4 \
+                                                    --schedule 1x \
+```
+
+or, you just run the script:
 ```Shell
 sh train_ddp.sh
 ```
-
-You can change the configurations of `train_ddp.sh`, according to your own situation.
 
 # Test
 ```Shell
