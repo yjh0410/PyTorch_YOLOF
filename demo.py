@@ -26,7 +26,7 @@ def parse_args():
                         type=str, help='The path to image files')
     parser.add_argument('--path_to_vid', default='data/demo/videos/',
                         type=str, help='The path to video files')
-    parser.add_argument('--path_to_save', default='det_results/images/',
+    parser.add_argument('--path_to_save', default='det_results/',
                         type=str, help='The path to save the detection results')
     parser.add_argument('--path_to_saveVid', default='data/videos/result.avi',
                         type=str, help='The path to save the detection results video')
@@ -39,10 +39,6 @@ def parse_args():
                         help='build yolof')
     parser.add_argument('--weight', default=None, type=str,
                         help='Trained state_dict file path to open')
-    parser.add_argument('--conf_thresh', default=0.1, type=float,
-                        help='NMS threshold')
-    parser.add_argument('--nms_thresh', default=0.45, type=float,
-                        help='NMS threshold')
     parser.add_argument('--topk', default=100, type=int,
                         help='NMS threshold')
     

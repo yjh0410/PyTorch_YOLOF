@@ -21,6 +21,7 @@ pip install -r requirements.txt
 We suggest that PyTorch should be higher than 1.9.0 and Torchvision should be higher than 0.10.3. At least, please make sure your torch is version 1.x.
 
 # Main results on COCO-val
+- AP results
 
 | Model                 |  scale     |  FPS  |   AP   |  AP50  | Weight |  log  |
 |-----------------------|------------|-------|--------|--------|--------|-------|
@@ -33,6 +34,12 @@ We suggest that PyTorch should be higher than 1.9.0 and Torchvision should be hi
 
 Limited by my computing resources, I cannot train `YOLOF_R101_C5_1x`, `YOLOF_R101_DC5_1x`.
 I would be very grateful if you used this project to train them and would like to share weight files.
+
+- Visualization
+
+(YOLOF_R50-C5_1x)
+
+![image](./img_files/coco_samples.png)
 
 # Train
 - Single GPU
