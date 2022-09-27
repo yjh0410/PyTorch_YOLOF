@@ -25,8 +25,8 @@ We suggest that PyTorch should be higher than 1.9.0 and Torchvision should be hi
 
 | Model                 |  scale     |  FPS  |   AP   |  AP50  | Weight |  log  |
 |-----------------------|------------|-------|--------|--------|--------|-------|
-| YOLOF_R18_C5_1x       |  800,1333  |       |  32.2  |  50.7  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof_r18_C5_1x_32.2.pth) | [log](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/YOLOF-R18-COCO.txt) |
-| YOLOF_R50_C5_1x       |  800,1333  |  50   |  37.5  |  57.4  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof-r50_C5_1x_37.2.pth) | [log](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/YOLOF-R50-COCO.txt) |
+| YOLOF_R18_C5_1x       |  800,1333  |  100  |  32.6  |  51.3  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof_r18_C5_1x_32.6.pth) | [log](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/YOLOF-R18-COCO.txt) |
+| YOLOF_R50_C5_1x       |  800,1333  |  50   |  37.5  |  57.4  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof-r50_C5_1x_37.5.pth) | [log](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/YOLOF-R50-COCO.txt) |
 | YOLOF_R50_DC5_1x      |  800,1333  |       |        |        | [github]() | [log]() |
 | YOLOF_R101_C5_1x      |  800,1333  |       |        |        | [github]() | [log]() |
 | YOLOF_R101_DC5_1x     |  800,1333  |       |        |        | [github]() | [log]() |
