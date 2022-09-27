@@ -145,7 +145,7 @@ class YOLOF(nn.Module):
 
         # Keep top k top scoring indices only.
         num_topk = min(self.topk, reg_pred.size(0))
-        
+
         # torch.sort is actually faster than .topk (at least on GPUs)
         predicted_prob, topk_idxs = cls_pred.sort(descending=True)
         topk_scores = predicted_prob[:num_topk]
@@ -156,7 +156,7 @@ class YOLOF(nn.Module):
         scores = topk_scores[keep_idxs]
         topk_idxs = topk_idxs[keep_idxs]
 
-        anchor_idxs = topk_idxs // self.num_classes
+        anchor_idxs = torch.div(topk_idxs, self.num_classes, rounding_mode='floor')
         labels = topk_idxs % self.num_classes
 
         reg_pred = reg_pred[anchor_idxs]

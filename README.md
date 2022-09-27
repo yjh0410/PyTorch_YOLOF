@@ -26,7 +26,7 @@ We suggest that PyTorch should be higher than 1.9.0 and Torchvision should be hi
 | Model                 |  scale     |  FPS  |   AP   |  AP50  | Weight |  log  |
 |-----------------------|------------|-------|--------|--------|--------|-------|
 | YOLOF_R18_C5_1x       |  800,1333  |       |  32.2  |  50.7  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof_r18_C5_1x_32.2.pth) | [log](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/YOLOF-R18-COCO.txt) |
-| YOLOF_R50_C5_1x       |  800,1333  |  50   |  37.2  |  57.0  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof-r50_C5_1x_37.2.pth) | [log](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/YOLOF-R50-COCO.txt) |
+| YOLOF_R50_C5_1x       |  800,1333  |  50   |  37.5  |  57.4  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof-r50_C5_1x_37.2.pth) | [log](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/YOLOF-R50-COCO.txt) |
 | YOLOF_R50_DC5_1x      |  800,1333  |       |        |        | [github]() | [log]() |
 | YOLOF_R101_C5_1x      |  800,1333  |       |        |        | [github]() | [log]() |
 | YOLOF_R101_DC5_1x     |  800,1333  |       |        |        | [github]() | [log]() |
@@ -93,6 +93,32 @@ python test.py -d coco \
                --weight path/to/weight \
                --root path/to/dataset/ \
                --show
+```
+
+# Evaluate
+```Shell
+python eval.py -d coco-val \
+               --cuda \
+               -v yolof-r50 \
+               --weight path/to/weight \
+               --root path/to/dataset/ \
+```
+
+Our AP results of YOLOF-R50-C5-1x on COCO-val:
+
+```Shell
+Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.375
+Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.574
+Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.399
+Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.185
+Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.421
+Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.522
+Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.312
+Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.507
+Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.552
+Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.332
+Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.625
+Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.739
 ```
 
 # Demo
