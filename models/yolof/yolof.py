@@ -145,14 +145,15 @@ class YOLOF(nn.Module):
 
         # Keep top k top scoring indices only.
         num_topk = min(self.topk, reg_pred.size(0))
+        
         # torch.sort is actually faster than .topk (at least on GPUs)
         predicted_prob, topk_idxs = cls_pred.sort(descending=True)
-        predicted_prob = predicted_prob[:num_topk]
+        topk_scores = predicted_prob[:num_topk]
         topk_idxs = topk_idxs[:num_topk]
 
         # filter out the proposals with low confidence score
-        keep_idxs = predicted_prob > self.conf_thresh
-        topk_scores = predicted_prob[keep_idxs]
+        keep_idxs = topk_scores > self.conf_thresh
+        scores = topk_scores[keep_idxs]
         topk_idxs = topk_idxs[keep_idxs]
 
         anchor_idxs = topk_idxs // self.num_classes
@@ -165,7 +166,7 @@ class YOLOF(nn.Module):
         bboxes = self.decode_boxes(anchors, reg_pred)
 
         # to cpu
-        scores = topk_scores.cpu().numpy()
+        scores = scores.cpu().numpy()
         labels = labels.cpu().numpy()
         bboxes = bboxes.cpu().numpy()
 
