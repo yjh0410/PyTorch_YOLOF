@@ -133,6 +133,61 @@ class YOLOF(nn.Module):
         return keep
 
 
+    def post_process(self, cls_pred, reg_pred, anchors):
+        """
+        Input:
+            cls_pred: (Tensor) [H x W x KA, C]
+            reg_pred: (Tensor) [H x W x KA, 4]
+            anchors:  (Tensor) [H x W x KA, 4]
+        """
+        # (HxWxAxK,)
+        cls_pred = cls_pred.flatten().sigmoid_()
+
+        # Keep top k top scoring indices only.
+        num_topk = min(self.topk, reg_pred.size(0))
+        # torch.sort is actually faster than .topk (at least on GPUs)
+        predicted_prob, topk_idxs = cls_pred.sort(descending=True)
+        predicted_prob = predicted_prob[:num_topk]
+        topk_idxs = topk_idxs[:num_topk]
+
+        # filter out the proposals with low confidence score
+        keep_idxs = predicted_prob > self.conf_thresh
+        predicted_prob = predicted_prob[keep_idxs]
+        topk_idxs = topk_idxs[keep_idxs]
+
+        anchor_idxs = topk_idxs // self.num_classes
+        labels = topk_idxs % self.num_classes
+
+        reg_pred = reg_pred[anchor_idxs]
+        anchors = anchors[anchor_idxs]
+
+        # decode bbox
+        bboxes = self.decode_boxes(anchors, reg_pred)
+
+        # to cpu
+        scores = scores.cpu().numpy()
+        labels = labels.cpu().numpy()
+        bboxes = bboxes.cpu().numpy()
+
+        # nms
+        keep = np.zeros(len(bboxes), dtype=np.int)
+        for i in range(self.num_classes):
+            inds = np.where(labels == i)[0]
+            if len(inds) == 0:
+                continue
+            c_bboxes = bboxes[inds]
+            c_scores = scores[inds]
+            c_keep = self.nms(c_bboxes, c_scores)
+            keep[inds[c_keep]] = 1
+
+        keep = np.where(keep > 0)
+        bboxes = bboxes[keep]
+        scores = scores[keep]
+        labels = labels[keep]
+
+        return bboxes, scores, labels
+
+
     @torch.no_grad()
     def inference_single_image(self, x):
         img_h, img_w = x.shape[2:]
@@ -151,45 +206,8 @@ class YOLOF(nn.Module):
         # anchor box
         anchor_boxes = self.generate_anchors(fmp_size=[fmp_h, fmp_w]) # [M, 4]
 
-        # scores
-        scores, labels = torch.max(cls_pred.sigmoid(), dim=-1)
-
-        # topk
-        if scores.shape[0] > self.topk:
-            scores, indices = torch.topk(scores, self.topk)
-            labels = labels[indices]
-            reg_pred = reg_pred[indices]
-            anchor_boxes = anchor_boxes[indices]
-
-        # decode box: [N, 4]
-        bboxes = self.decode_boxes(anchor_boxes, reg_pred)
-
-        # to cpu
-        scores = scores.cpu().numpy()
-        labels = labels.cpu().numpy()
-        bboxes = bboxes.cpu().numpy()
-
-        # threshold
-        keep = np.where(scores >= self.conf_thresh)
-        scores = scores[keep]
-        labels = labels[keep]
-        bboxes = bboxes[keep]
-
-        # nms
-        keep = np.zeros(len(bboxes), dtype=np.int)
-        for i in range(self.num_classes):
-            inds = np.where(labels == i)[0]
-            if len(inds) == 0:
-                continue
-            c_bboxes = bboxes[inds]
-            c_scores = scores[inds]
-            c_keep = self.nms(c_bboxes, c_scores)
-            keep[inds[c_keep]] = 1
-
-        keep = np.where(keep > 0)
-        bboxes = bboxes[keep]
-        scores = scores[keep]
-        labels = labels[keep]
+        # post process
+        bboxes, scores, labels = self.post_process(cls_pred, reg_pred, anchor_boxes)
 
         # normalize bbox
         bboxes[..., [0, 2]] /= img_w
