@@ -152,7 +152,7 @@ class YOLOF(nn.Module):
 
         # filter out the proposals with low confidence score
         keep_idxs = predicted_prob > self.conf_thresh
-        predicted_prob = predicted_prob[keep_idxs]
+        topk_scores = predicted_prob[keep_idxs]
         topk_idxs = topk_idxs[keep_idxs]
 
         anchor_idxs = topk_idxs // self.num_classes
@@ -165,7 +165,7 @@ class YOLOF(nn.Module):
         bboxes = self.decode_boxes(anchors, reg_pred)
 
         # to cpu
-        scores = scores.cpu().numpy()
+        scores = topk_scores.cpu().numpy()
         labels = labels.cpu().numpy()
         bboxes = bboxes.cpu().numpy()
 
