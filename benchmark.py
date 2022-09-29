@@ -105,7 +105,7 @@ if __name__ == '__main__':
                 image_set='val2017')
 
     # YOLOF Config
-    cfg = build_config[args]
+    cfg = build_config(args)
     # build model
     model = build_model(args=args, 
                         cfg=cfg,
