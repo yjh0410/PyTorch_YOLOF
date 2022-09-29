@@ -2,7 +2,7 @@ python train.py \
         --cuda \
         -d coco \
         --root /mnt/share/ssd2/dataset/ \
-        -v yolof-r50-DC5 \
+        -v yolof-r50-RT \
         --batch_size 16 \
-        --schedule 1x \
+        --schedule 3x \
         --grad_clip_norm 4.0 \
