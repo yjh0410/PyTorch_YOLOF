@@ -126,17 +126,17 @@ class FCOS(nn.Module):
     def post_process(self, cls_pred, reg_pred, ctn_pred, anchors):
         """
         Input:
-            cls_pred: List(Tensor) [[H x W x KA, C], ...]
-            reg_pred: List(Tensor) [[H x W x KA, 4], ...]
-            ctn_pred: List(Tensor) [[H x W x KA, 1], ...]
-            anchors:  List(Tensor) [[H x W x KA, 2], ...]
+            cls_pred: List(Tensor) [[H x W, C], ...]
+            reg_pred: List(Tensor) [[H x W, 4], ...]
+            ctn_pred: List(Tensor) [[H x W, 1], ...]
+            anchors:  List(Tensor) [[H x W, 2], ...]
         """
         all_scores = []
         all_labels = []
         all_bboxes = []
         
         for cls_pred_i, reg_pred_i, ctn_pred_i, anchors_i in zip(cls_pred, reg_pred, ctn_pred, anchors):
-            # (HxWxAxK,)
+            # (H x W x C,)
             cls_pred_i = (cls_pred_i.sigmoid() * ctn_pred_i.sigmoid()).flatten()
 
             # Keep top k top scoring indices only.

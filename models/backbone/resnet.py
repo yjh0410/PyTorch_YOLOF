@@ -54,7 +54,7 @@ class BackboneBase(nn.Module):
         for name, parameter in backbone.named_parameters():
             if 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
                 parameter.requires_grad_(False)
-        return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
+        return_layers = {"layer2": "0", "layer3": "1", "layer4": "2"}
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
         self.num_channels = num_channels
 
@@ -81,7 +81,7 @@ class Backbone(BackboneBase):
         backbone = getattr(torchvision.models, name)(
             replace_stride_with_dilation=[False, False, dilation],
             pretrained=pretrained, norm_layer=norm_layer)
-        num_channels = [64, 128, 256, 512] if name in ('resnet18', 'resnet34') else [256, 512, 1024, 2048]
+        num_channels = [128, 256, 512] if name in ('resnet18', 'resnet34') else [512, 1024, 2048]
         super().__init__(backbone, num_channels)
 
 

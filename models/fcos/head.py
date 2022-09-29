@@ -11,7 +11,7 @@ class DecoupledHead(nn.Module):
                  num_cls_heads=4,
                  num_reg_heads=4,
                  act_type='relu',
-                 norm_type=''):
+                 norm_type='BN'):
         super().__init__()
 
         print('==============================')
