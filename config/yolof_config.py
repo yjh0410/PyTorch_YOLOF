@@ -275,7 +275,7 @@ yolof_config = {
     'yolof-r50-RT': {
         # input
         'train_min_size': 512,
-        'train_max_size': 736,
+        'train_max_size': 900,
         'test_min_size': 512,
         'test_max_size': 736,
         'format': 'RGB',
