@@ -7,16 +7,13 @@ def build_optimizer(cfg, model, base_lr=0.0, backbone_lr=0.0):
     print('--momentum: {}'.format(cfg['momentum']))
     print('--weight_decay: {}'.format(cfg['weight_decay']))
 
-    if base_lr == backbone_lr:
-        param_dicts = model.parameters()
-    else:
-        param_dicts = [
-            {"params": [p for n, p in model.named_parameters() if "backbone" not in n and p.requires_grad]},
-            {
-                "params": [p for n, p in model.named_parameters() if "backbone" in n and p.requires_grad],
-                "lr": backbone_lr,
-            },
-        ]
+    param_dicts = [
+        {"params": [p for n, p in model.named_parameters() if "backbone" not in n and p.requires_grad]},
+        {
+            "params": [p for n, p in model.named_parameters() if "backbone" in n and p.requires_grad],
+            "lr": backbone_lr,
+        },
+    ]
 
     if cfg['optimizer'] == 'sgd':
         optimizer = optim.SGD(

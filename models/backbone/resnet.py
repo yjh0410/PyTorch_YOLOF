@@ -81,7 +81,7 @@ class Backbone(BackboneBase):
         backbone = getattr(torchvision.models, name)(
             replace_stride_with_dilation=[False, False, dilation],
             pretrained=pretrained, norm_layer=norm_layer)
-        num_channels = 512 if name in ('resnet18', 'resnet34') else 2048
+        num_channels = [64, 128, 256, 512] if name in ('resnet18', 'resnet34') else [256, 512, 1024, 2048]
         super().__init__(backbone, num_channels)
 
 

@@ -4,20 +4,19 @@ import time
 import os
 import torch
 
-from config.yolof_config import yolof_config
 from data.transforms import ValTransforms
 from data.coco import COCODataset, coco_class_index, coco_class_labels
 from utils.com_flops_params import FLOPs_and_Params
 from utils import fuse_conv_bn
 from utils.misc import load_weight
 
-from models.yolof import build_model
+from models import build_model
+from config import build_config
 
 
 parser = argparse.ArgumentParser(description='Benchmark')
 # Model
 parser.add_argument('-v', '--version', default='yolof50',
-                    choices=['yolof-r18', 'yolof-r50', 'yolof-r50-DC5', 'yolof-r101', 'yolof-r101-DC5', 'yolof-r50-RT'],
                     help='build yolof')
 parser.add_argument('--fuse_conv_bn', action='store_true', default=False,
                     help='fuse conv and bn')
@@ -106,7 +105,7 @@ if __name__ == '__main__':
                 image_set='val2017')
 
     # YOLOF Config
-    cfg = yolof_config[args.version]
+    cfg = build_config[args]
     # build model
     model = build_model(args=args, 
                         cfg=cfg,

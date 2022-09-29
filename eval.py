@@ -7,11 +7,11 @@ from evaluator.voc_evaluator import VOCAPIEvaluator
 from evaluator.coco_evaluator import COCOAPIEvaluator
 
 from data.transforms import ValTransforms
-from config.yolof_config import yolof_config
 
 from utils.misc import load_weight
 
-from models.yolof import build_model
+from models import build_model
+from config import build_config
 
 
 def parse_args():
@@ -20,7 +20,6 @@ def parse_args():
                         help='use cuda.')
     # model
     parser.add_argument('-v', '--version', default='yolof50',
-                        choices=['yolof-r18', 'yolof-r50', 'yolof-r50-DC5', 'yolof-r101', 'yolof-r101-DC5', 'yolof-r50-RT'],
                         help='build yolof')
     parser.add_argument('--weight', default=None, type=str,
                         help='Trained state_dict file path to open')
@@ -97,7 +96,7 @@ if __name__ == '__main__':
 
     # YOLOF config
     print('Model: ', args.version)
-    cfg = yolof_config[args.version]
+    cfg = build_config[args]
 
     # build model
     model = build_model(args=args, 

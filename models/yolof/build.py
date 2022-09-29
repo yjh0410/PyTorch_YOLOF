@@ -4,7 +4,7 @@ from .criterion import build_criterion
 
 
 # build YOLOF detector
-def build_model(args, 
+def build_yolof(args, 
                 cfg, 
                 device, 
                 num_classes=80, 

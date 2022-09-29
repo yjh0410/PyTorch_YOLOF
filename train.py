@@ -16,8 +16,8 @@ from utils.misc import build_dataset, build_dataloader
 from utils.solver.optimizer import build_optimizer
 from utils.solver.warmup_schedule import build_warmup
 
-from models.yolof import build_model
-from config.yolof_config import yolof_config
+from models import build_model
+from config import build_config
 
 
 def parse_args():
@@ -44,7 +44,6 @@ def parse_args():
 
     # model
     parser.add_argument('-v', '--version', default='yolof-r50',
-                        choices=['yolof-r18', 'yolof-r50', 'yolof-r50-DC5', 'yolof-r101', 'yolof-r101-DC5', 'yolof-r50-RT'],
                         help='build yolof')
     parser.add_argument('--topk', default=1000, type=int,
                         help='NMS threshold')
@@ -106,7 +105,7 @@ def train():
         device = torch.device("cpu")
 
     # YOLOF Config
-    cfg = yolof_config[args.version]
+    cfg = build_config(args)
     print('==============================')
     print('Model Configuration: \n', cfg)
 
