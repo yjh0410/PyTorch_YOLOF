@@ -56,7 +56,7 @@ def build_yolof(args,
                         
     # ----------- Criterion ------------ #
     if trainable:
-        criterion = build_criterion(args=args, device=device, cfg=cfg, num_classes=num_classes)
+        criterion = build_criterion(cfg=cfg, device=device, num_classes=num_classes)
 
         return model, criterion
 

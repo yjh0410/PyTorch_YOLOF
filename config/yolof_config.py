@@ -65,6 +65,11 @@ yolof_config = {
         'iou_t': 0.15,
         'igt': 0.7,
         'ctr_clamp': 32,
+        # loss
+        'alpha': 0.25,
+        'gamma': 2.0,
+        'loss_cls_weight': 1.0,
+        'loss_reg_weight': 1.0,
         # optimizer
         'base_lr': 0.12 / 64,
         'bk_lr_ratio': 1.0 / 3.0,
@@ -150,6 +155,11 @@ yolof_config = {
         'iou_t': 0.15,
         'igt': 0.7,
         'ctr_clamp': 32,
+        # loss
+        'alpha': 0.25,
+        'gamma': 2.0,
+        'loss_cls_weight': 1.0,
+        'loss_reg_weight': 1.0,
         # optimizer
         'base_lr': 0.12 / 64,
         'bk_lr_ratio': 1.0 / 3.0,
@@ -235,6 +245,11 @@ yolof_config = {
         'iou_t': 0.1,
         'igt': 0.7,
         'ctr_clamp': 32,
+        # loss
+        'alpha': 0.25,
+        'gamma': 2.0,
+        'loss_cls_weight': 1.0,
+        'loss_reg_weight': 1.0,
         # optimizer
         'base_lr': 0.12 / 64,
         'bk_lr_ratio': 1.0 / 3.0,
@@ -308,6 +323,11 @@ yolof_config = {
         'iou_t': 0.1,
         'igt': 0.7,
         'ctr_clamp': 32,
+        # loss
+        'alpha': 0.25,
+        'gamma': 2.0,
+        'loss_cls_weight': 1.0,
+        'loss_reg_weight': 1.0,
         # optimizer
         'base_lr': 0.12 / 64,
         'bk_lr_ratio': 1.0 / 3.0,

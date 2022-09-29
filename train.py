@@ -27,8 +27,8 @@ def parse_args():
                         help='use cuda.')
     parser.add_argument('-bs', '--batch_size', default=16, type=int, 
                         help='Batch size on single GPU for training')
-    parser.add_argument('--schedule', type=str, default='1x', choices=['1x', '2x', '3x', '9x'],
-                        help='training schedule. Attention, 9x is designed for YOLOF53-DC5.')
+    parser.add_argument('--schedule', type=str, default='1x',
+                        help='training schedule: 1x, 2x, 3x, ...')
     parser.add_argument('--num_workers', default=4, type=int, 
                         help='Number of workers used in dataloading')
     parser.add_argument('--eval_epoch', default=1, type=int,
@@ -44,7 +44,7 @@ def parse_args():
 
     # model
     parser.add_argument('-v', '--version', default='yolof-r50',
-                        help='build yolof')
+                        help='build object detector')
     parser.add_argument('--topk', default=1000, type=int,
                         help='NMS threshold')
     parser.add_argument('-p', '--coco_pretrained', default=None, type=str,
@@ -55,16 +55,6 @@ def parse_args():
                         help='data root')
     parser.add_argument('-d', '--dataset', default='coco',
                         help='coco, voc, widerface, crowdhuman')
-    
-    # Loss
-    parser.add_argument('--alpha', default=0.25, type=float,
-                        help='focal loss alpha')
-    parser.add_argument('--gamma', default=2.0, type=float,
-                        help='focal loss gamma')
-    parser.add_argument('--loss_cls_weight', default=1.0, type=float,
-                        help='weight of cls loss')
-    parser.add_argument('--loss_reg_weight', default=1.0, type=float,
-                        help='weight of reg loss')
     
     # train trick
     parser.add_argument('--no_warmup', action='store_true', default=False,

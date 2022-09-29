@@ -39,18 +39,18 @@ class SigmoidFocalWithLogitsLoss(nn.Module):
 
 
 class Criterion(nn.Module):
-    def __init__(self, args, cfg, device, num_classes=80):
+    def __init__(self, cfg, device, num_classes=80):
         super().__init__()
         self.cfg = cfg
         self.device = device
-        self.alpha = args.alpha
-        self.gamma = args.gamma
+        self.alpha = cfg['alpha']
+        self.gamma = cfg['gamma']
         self.matcher = UniformMatcher(cfg['topk'])
         self.num_classes = num_classes
-        self.loss_cls_weight = args.loss_cls_weight
-        self.loss_reg_weight = args.loss_reg_weight
+        self.loss_cls_weight = cfg['loss_cls_weight']
+        self.loss_reg_weight = cfg['loss_reg_weight']
 
-        self.cls_loss_f = SigmoidFocalWithLogitsLoss(reduction='none', gamma=args.gamma, alpha=args.alpha)
+        self.cls_loss_f = SigmoidFocalWithLogitsLoss(reduction='none', gamma=cfg['gamma'], alpha=cfg['alpha'])
 
 
     def loss_labels(self, pred_cls, tgt_cls, num_boxes):
@@ -173,8 +173,8 @@ class Criterion(nn.Module):
         return loss_dict
 
 
-def build_criterion(args, cfg, device, num_classes=80):
-    criterion = Criterion(args=args, cfg=cfg, device=device, num_classes=num_classes)
+def build_criterion(cfg, device, num_classes=80):
+    criterion = Criterion(cfg=cfg, device=device, num_classes=num_classes)
     return criterion
 
     
