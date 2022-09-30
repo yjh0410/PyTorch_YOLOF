@@ -142,7 +142,7 @@ class FCOS(nn.Module):
         
         for cls_pred_i, reg_pred_i, ctn_pred_i, anchors_i in zip(cls_pred, reg_pred, ctn_pred, anchors):
             # (H x W x C,)
-            cls_pred_i = (cls_pred_i.sigmoid() * ctn_pred_i.sigmoid()).flatten()
+            cls_pred_i = (torch.sqrt(cls_pred_i.sigmoid() * ctn_pred_i.sigmoid())).flatten()
 
             # Keep top k top scoring indices only.
             num_topk = min(self.topk, reg_pred_i.size(0))
