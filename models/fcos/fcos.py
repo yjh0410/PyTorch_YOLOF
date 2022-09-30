@@ -55,10 +55,10 @@ class FCOS(nn.Module):
         ## fpn neck
         self.fpn = build_fpn(cfg, bk_dims, cfg['head_dim'])
                                      
-        # head
+        ## head
         self.head = build_head(cfg, num_classes)
 
-        # scale
+        ## scale
         self.scales = nn.ModuleList([Scale() for _ in range(len(self.stride))])
 
 
