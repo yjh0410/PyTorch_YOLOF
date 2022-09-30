@@ -152,14 +152,6 @@ def train():
         if args.distributed:
             dataloader.batch_sampler.sampler.set_epoch(epoch)            
 
-        print('Saving state, epoch:', epoch + 1)
-        weight_name = '{}_epoch_{}.pth'.format(args.version, epoch + 1)
-        checkpoint_path = os.path.join(path_to_save, weight_name)
-        torch.save({'model': model_without_ddp.state_dict(),
-                    'epoch': epoch,
-                    'args': args}, 
-                    checkpoint_path)                      
-
         # train one epoch
         for iter_i, (images, targets, masks) in enumerate(dataloader):
             ni = iter_i + epoch * epoch_size
