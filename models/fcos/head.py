@@ -20,6 +20,7 @@ class DecoupledHead(nn.Module):
             bias = True
         else:
             bias = False
+
         self.cls_feats = nn.Sequential(*[Conv(head_dim, 
                                               head_dim, 
                                               k=3, p=1, s=1, 
@@ -33,6 +34,10 @@ class DecoupledHead(nn.Module):
                                               norm_type=norm_type,
                                               bias=bias) for _ in range(num_reg_heads)])
 
+        # pred
+        self.cls_pred = nn.Conv2d(head_dim, num_classes,  kernel_size=3, padding=1)
+        self.reg_pred = nn.Conv2d(head_dim, 4, kernel_size=3, padding=1)
+        self.ctn_pred = nn.Conv2d(head_dim, 1, kernel_size=3, padding=1)
 
         self._init_weight()
 
@@ -49,17 +54,17 @@ class DecoupledHead(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
-        # # init cls pred
-        # nn.init.normal_(self.cls_pred.weight, mean=0, std=0.01)
-        # init_prob = 0.01
-        # bias_value = -torch.log(torch.tensor((1. - init_prob) / init_prob))
-        # nn.init.constant_(self.cls_pred.bias, bias_value)
-        # # init reg pred
-        # nn.init.normal_(self.reg_pred.weight, mean=0, std=0.01)
-        # nn.init.constant_(self.reg_pred.bias, 0.0)
-        # # init ctn pred
-        # nn.init.normal_(self.ctn_pred.weight, mean=0, std=0.01)
-        # nn.init.constant_(self.reg_pred.bias, 0.0)
+        # init cls pred
+        nn.init.normal_(self.cls_pred.weight, mean=0, std=0.01)
+        init_prob = 0.01
+        bias_value = -torch.log(torch.tensor((1. - init_prob) / init_prob))
+        nn.init.constant_(self.cls_pred.bias, bias_value)
+        # init reg pred
+        nn.init.normal_(self.reg_pred.weight, mean=0, std=0.01)
+        nn.init.constant_(self.reg_pred.bias, 0.0)
+        # init ctn pred
+        nn.init.normal_(self.ctn_pred.weight, mean=0, std=0.01)
+        nn.init.constant_(self.reg_pred.bias, 0.0)
 
 
     def forward(self, x):
@@ -69,11 +74,11 @@ class DecoupledHead(nn.Module):
         cls_feats = self.cls_feats(x)
         reg_feats = self.reg_feats(x)
 
-        # cls_pred = self.cls_pred(cls_feats)
-        # reg_pred = self.reg_pred(reg_feats)
-        # ctn_pred = self.ctn_pred(reg_feats)
+        cls_pred = self.cls_pred(cls_feats)
+        reg_pred = self.reg_pred(reg_feats)
+        ctn_pred = self.ctn_pred(reg_feats)
 
-        return cls_feats, reg_feats
+        return cls_pred, reg_pred, ctn_pred
 
 
 # build head

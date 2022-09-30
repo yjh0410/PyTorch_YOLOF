@@ -49,7 +49,7 @@ fcos_config = {
         'num_cls_heads': 4,
         'num_reg_heads': 4,
         'head_act_type': 'relu',
-        'head_norm_type': None,
+        'head_norm_type': 'GN',
         # post process
         'conf_thresh': 0.1,
         'nms_thresh': 0.5,

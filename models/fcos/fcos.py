@@ -58,11 +58,6 @@ class FCOS(nn.Module):
         # head
         self.head = build_head(cfg, num_classes)
 
-        # pred
-        self.cls_pred = nn.Conv2d(cfg['head_dim'], num_classes,  kernel_size=3, padding=1)
-        self.reg_pred = nn.Conv2d(cfg['head_dim'], 4, kernel_size=3, padding=1)
-        self.ctn_pred = nn.Conv2d(cfg['head_dim'], 1, kernel_size=3, padding=1)
-
         # scale
         self.scales = nn.ModuleList([Scale() for _ in range(len(self.stride))])
 
@@ -214,12 +209,7 @@ class FCOS(nn.Module):
         all_ctn_preds = []
         all_anchors = []
         for level, feat in enumerate(pyramid_feats):
-            cls_feats, reg_feats = self.head(feat)
-
-            cls_pred = self.cls_pred(cls_feats)
-            reg_pred = self.reg_pred(reg_feats)
-            ctn_pred = self.ctn_pred(reg_feats)
-
+            cls_pred, reg_pred, ctn_pred = self.head(feat)
 
             _, _, H, W = cls_pred.size()
             fmp_size = [H, W]
