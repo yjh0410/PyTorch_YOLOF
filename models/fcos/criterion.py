@@ -279,7 +279,7 @@ class Criterion(object):
             if len(tgt_labels) == 0 or tgt_bboxes.max().item() == 0.:
                 num_anchors = sum([ab.shape[0] for ab in anchors])
                 # There is no valid gt
-                cls_target = cls_preds.new_zeros((num_anchors,))
+                cls_target = cls_preds.new_zeros((num_anchors,)).long()
                 reg_target = cls_preds.new_zeros((0, 4))
                 ctn_target = cls_preds.new_zeros((0, 1))
                 fg_mask = cls_preds.new_zeros(num_anchors).bool()
