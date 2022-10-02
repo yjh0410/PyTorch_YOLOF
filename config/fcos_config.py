@@ -202,7 +202,7 @@ fcos_config = {
         'res5_dilation': False,
         'stride': [8, 16, 32],  # P3, P4, P5
         'bk_act_type': 'relu',
-        'bk_norm_type': 'FrozeBN',
+        'bk_norm_type': 'BN',
         # fpn neck
         'fpn': 'pafpn',
         'fpn_norm': 'BN',
