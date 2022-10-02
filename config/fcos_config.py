@@ -222,7 +222,7 @@ fcos_config = {
         'conf_thresh_val': 0.05,
         'nms_thresh_val': 0.6,
         # matcher
-        'matcher': 'ota_matcher',
+        'matcher': 'sim_ota',
         'topk_candidate': 10,
         'eps': 0.1, 
         'max_iter': 50,

@@ -21,7 +21,7 @@ class Criterion(object):
             self.matcher = Matcher(cfg,
                                    num_classes=num_classes,
                                    box_weights=[1., 1., 1., 1.])
-        elif cfg['matcher'] == 'ota_matcher':
+        elif cfg['matcher'] == 'ota':
             self.matcher = OTA_Matcher(cfg, 
                                        num_classes, 
                                        box_weights=[1., 1., 1., 1.])
@@ -369,7 +369,7 @@ class Criterion(object):
     def __call__(self, outputs, targets):
         if self.cfg['matcher'] == 'matcher':
             return self.basic_losses(outputs, targets)
-        elif self.cfg['matcher'] == 'ota_matcher':
+        elif self.cfg['matcher'] == 'ota':
             return self.ota_losses(outputs, targets)
         elif self.cfg['matcher'] == 'sim_ota':
             return self.simota_losses(outputs, targets)
