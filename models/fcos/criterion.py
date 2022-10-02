@@ -326,7 +326,6 @@ class Criterion(object):
 
         # one-hot: [BM, C]
         gt_classes_target = torch.zeros_like(cls_preds)
-        print(gt_classes_target.shape, fg_masks.shape, cls_targets.shape)
         gt_classes_target[fg_masks, cls_targets[fg_masks]] = 1
 
         # cls loss

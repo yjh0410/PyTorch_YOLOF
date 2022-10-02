@@ -448,7 +448,10 @@ class SimOTA(object):
 
         # class target: [M,]
         gt_classes = tgt_labels.new_ones(num_anchor) * self.num_classes
+        print(gt_classes.shape)
         gt_classes[fg_mask] = gt_matched_classes
+        print(gt_classes.shape)
+
 
         return (
                 gt_classes,
