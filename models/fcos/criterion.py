@@ -326,7 +326,7 @@ class Criterion(object):
 
         # one-hot: [BM, C]
         gt_classes_target = torch.zeros_like(cls_preds)
-        gt_classes_target[fg_mask, gt_classes[fg_mask]] = 1
+        gt_classes_target[fg_masks, cls_targets[fg_masks]] = 1
 
         # cls loss
         valid_idxs = (cls_targets >= 0) & masks
@@ -344,7 +344,7 @@ class Criterion(object):
         loss_bboxes = (1.0 - ious).sum() / num_foregrounds
 
         # iou loss
-        matched_iou_preds = ctn_preds[fg_mask]
+        matched_iou_preds = ctn_preds[fg_masks]
         loss_ious = F.binary_cross_entropy_with_logits(
             matched_iou_preds,
             ctn_targets,
