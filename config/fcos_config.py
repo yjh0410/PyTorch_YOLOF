@@ -186,7 +186,7 @@ fcos_config = {
         'pixel_mean': [123.675, 116.28, 103.53],
         'pixel_std': [58.395, 57.12, 57.375],
         'min_box_size': 8,
-        'mosaic': False,
+        'mosaic': True,
         'transforms': {
             '3x':[{'name': 'DistortTransform',
                    'hue': 0.1,
