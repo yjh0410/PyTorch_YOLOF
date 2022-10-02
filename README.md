@@ -23,17 +23,23 @@ We suggest that PyTorch should be higher than 1.9.0 and Torchvision should be hi
 # Main results on COCO-val
 - AP results
 
-| Model                 |  scale     |  FPS  |   AP   |  AP50  | Weight |  log  |
-|-----------------------|------------|-------|--------|--------|--------|-------|
-| YOLOF_R18_C5_1x       |  800,1333  |  100  |  32.6  |  51.3  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof_r18_C5_1x_32.6.pth) | [log](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/YOLOF-R18-COCO.txt) |
-| YOLOF_R50_C5_1x       |  800,1333  |  50   |  37.5  |  57.4  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof-r50_C5_1x_37.5.pth) | [log](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/YOLOF-R50-COCO.txt) |
-| YOLOF_R50_DC5_1x      |  800,1333  |  32   |  38.7  |  58.5  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof-r50-DC5_1x_38.7.pth) | [log]() |
-| YOLOF_R101_C5_1x      |  800,1333  |       |        |        | [github]() | [log]() |
-| YOLOF_R101_DC5_1x     |  800,1333  |       |        |        | [github]() | [log]() |
-| YOLOF_R50-RT_3x       |  800,1333  |       |        |        | [github]() | [log]() |
+| Model                 |  scale     |  FPS  |   AP   |  AP50  | Weight |
+|-----------------------|------------|-------|--------|--------|--------|
+| YOLOF_R18_C5_1x       |  800,1333  |  100  |  32.6  |  51.3  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof_r18_C5_1x_32.6.pth) |
+| YOLOF_R50_C5_1x       |  800,1333  |  50   |  37.5  |  57.4  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof-r50_C5_1x_37.5.pth) |
+| YOLOF_R50_DC5_1x      |  800,1333  |  32   |  38.7  |  58.5  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof-r50-DC5_1x_38.7.pth) |
+| YOLOF_R101_C5_1x      |  800,1333  |       |        |        | [github]() |
+| YOLOF_R101_DC5_1x     |  800,1333  |       |        |        | [github]() |
+| YOLOF_R50-RT_3x       |  512,736   |       |        |        | [github]() |
 
 Limited by my computing resources, I cannot train `YOLOF_R101_C5_1x`, `YOLOF_R101_DC5_1x`.
 I would be very grateful if you used this project to train them and would like to share weight files.
+| Model             |  scale     |  FPS  |   AP   |  AP50  | Weight |
+|-------------------|------------|-------|--------|--------|--------|
+| FCOS_R18_1x       |  800,1333  |  42   |  33.0  |  51.3  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/fcos-r18_1x_33.0.pth) |
+| FCOS_R50_1x       |  800,1333  |     |    |    | [github]() |
+| FCOS_R50-RT_3x    |  512,736   |     |    |    | [github]() |
+
 
 - Visualization
 

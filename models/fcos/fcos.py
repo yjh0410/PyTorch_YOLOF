@@ -272,6 +272,14 @@ class FCOS(nn.Module):
                 reg_pred = F.relu(self.scales[level](reg_pred)) * self.stride[level]
                 ctn_pred = ctn_pred.permute(0, 2, 3, 1).contiguous().view(B, -1, 1)
 
+                # generate anchors: [M, 2]
+                anchors = self.generate_anchors(level, fmp_size)
+                all_anchors.append(anchors)
+            
+                if self.cfg['decode_bbox']:
+                    # decode bbox
+                    reg_pred = self.decode_boxes(anchors, reg_pred)
+
                 all_cls_preds.append(cls_pred)
                 all_reg_preds.append(reg_pred)
                 all_ctn_preds.append(ctn_pred)
@@ -284,10 +292,6 @@ class FCOS(nn.Module):
                     
                     all_masks.append(mask_i)
 
-                # generate anchors: [M, 2]
-                anchors = self.generate_anchors(level, fmp_size)
-                all_anchors.append(anchors)
-            
             # output dict
             outputs = {"pred_cls": all_cls_preds,  # List [B, M, C]
                        "pred_reg": all_reg_preds,  # List [B, M, 4]
