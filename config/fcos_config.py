@@ -186,7 +186,7 @@ fcos_config = {
         'pixel_mean': [123.675, 116.28, 103.53],
         'pixel_std': [58.395, 57.12, 57.375],
         'min_box_size': 8,
-        'mosaic': True,
+        'mosaic': False,
         'transforms': {
             '3x':[{'name': 'DistortTransform',
                    'hue': 0.1,
@@ -202,10 +202,10 @@ fcos_config = {
         'res5_dilation': False,
         'stride': [8, 16, 32],  # P3, P4, P5
         'bk_act_type': 'relu',
-        'bk_norm_type': 'FrozeBN',
+        'bk_norm_type': 'BN',
         # fpn neck
         'fpn': 'pafpn',
-        'fpn_norm': 'GN',
+        'fpn_norm': 'BN',
         'from_c5': False,
         'p6_feat': False,
         'p7_feat': False,
@@ -214,7 +214,7 @@ fcos_config = {
         'num_cls_heads': 4,
         'num_reg_heads': 4,
         'head_act_type': 'relu',
-        'head_norm_type': 'GN',
+        'head_norm_type': 'BN',
         'decode_bbox': True,
         # post process
         'conf_thresh': 0.1,
