@@ -50,7 +50,6 @@ fcos_config = {
         'num_reg_heads': 4,
         'head_act_type': 'relu',
         'head_norm_type': 'GN',
-        'decode_bbox': False,
         # post process
         'conf_thresh': 0.1,
         'nms_thresh': 0.5,
@@ -137,7 +136,6 @@ fcos_config = {
         'num_reg_heads': 4,
         'head_act_type': 'relu',
         'head_norm_type': 'GN',
-        'decode_bbox': False,
         # post process
         'conf_thresh': 0.1,
         'nms_thresh': 0.5,
@@ -178,10 +176,10 @@ fcos_config = {
 
     'fcos-r50-RT': {
         # input
-        'train_min_size': 640,
-        'train_max_size': 640,
-        'test_min_size': 640,
-        'test_max_size': 640,
+        'train_min_size': 512,
+        'train_max_size': 900,
+        'test_min_size': 512,
+        'test_max_size': 736,
         'format': 'RGB',
         'pixel_mean': [123.675, 116.28, 103.53],
         'pixel_std': [58.395, 57.12, 57.375],
@@ -193,6 +191,7 @@ fcos_config = {
                    'saturation': 1.5,
                    'exposure': 1.5},
                   {'name': 'RandomHorizontalFlip'},
+                  {'name': 'RandomShift', 'max_shift': 32},
                   {'name': 'JitterCrop', 'jitter_ratio': 0.3},
                   {'name': 'ToTensor'},
                   {'name': 'Resize'},
@@ -202,10 +201,10 @@ fcos_config = {
         'res5_dilation': False,
         'stride': [8, 16, 32],  # P3, P4, P5
         'bk_act_type': 'relu',
-        'bk_norm_type': 'BN',
+        'bk_norm_type': 'FrozeBN',
         # fpn neck
         'fpn': 'pafpn',
-        'fpn_norm': 'BN',
+        'fpn_norm': 'GN',
         'from_c5': False,
         'p6_feat': False,
         'p7_feat': False,
@@ -214,7 +213,7 @@ fcos_config = {
         'num_cls_heads': 4,
         'num_reg_heads': 4,
         'head_act_type': 'relu',
-        'head_norm_type': 'BN',
+        'head_norm_type': 'GN',
         'decode_bbox': False,
         # post process
         'conf_thresh': 0.1,
