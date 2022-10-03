@@ -18,14 +18,20 @@ class Criterion(object):
         self.loss_reg_weight = cfg['loss_reg_weight']
         self.loss_ctn_weight = cfg['loss_ctn_weight']
         if cfg['matcher'] == 'matcher':
+            print('==============================')
+            print('Matcher: FCOS Matcher')
             self.matcher = Matcher(cfg,
                                    num_classes=num_classes,
                                    box_weights=[1., 1., 1., 1.])
         elif cfg['matcher'] == 'ota':
+            print('==============================')
+            print('Matcher: OTA Matcher')
             self.matcher = OTA_Matcher(cfg, 
                                        num_classes, 
                                        box_weights=[1., 1., 1., 1.])
         elif cfg['matcher'] == 'sim_ota':
+            print('==============================')
+            print('Matcher: SimOTA Matcher')
             self.matcher = SimOTA(cfg, num_classes)
 
 
