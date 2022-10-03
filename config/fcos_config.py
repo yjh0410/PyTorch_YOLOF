@@ -178,15 +178,15 @@ fcos_config = {
 
     'fcos-r50-RT': {
         # input
-        'train_min_size': 512,
-        'train_max_size': 900,
-        'test_min_size': 512,
-        'test_max_size': 736,
+        'train_min_size': 640,
+        'train_max_size': 640,
+        'test_min_size': 640,
+        'test_max_size': 640,
         'format': 'RGB',
         'pixel_mean': [123.675, 116.28, 103.53],
         'pixel_std': [58.395, 57.12, 57.375],
         'min_box_size': 8,
-        'mosaic': False,
+        'mosaic': True,
         'transforms': {
             '3x':[{'name': 'DistortTransform',
                    'hue': 0.1,
