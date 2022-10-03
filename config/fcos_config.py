@@ -215,14 +215,14 @@ fcos_config = {
         'num_reg_heads': 4,
         'head_act_type': 'relu',
         'head_norm_type': 'BN',
-        'decode_bbox': True,
+        'decode_bbox': False,
         # post process
         'conf_thresh': 0.1,
         'nms_thresh': 0.5,
         'conf_thresh_val': 0.05,
         'nms_thresh_val': 0.6,
         # matcher
-        'matcher': 'sim_ota',
+        'matcher': 'ota',
         'topk_candidate': 10,
         'eps': 0.1, 
         'max_iter': 50,
