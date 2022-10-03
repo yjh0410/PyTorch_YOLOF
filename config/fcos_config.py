@@ -222,7 +222,7 @@ fcos_config = {
         'nms_thresh_val': 0.6,
         # matcher
         'matcher': 'ota',
-        'topk_candidate': 10,
+        'topk_candidate': 20,
         'eps': 0.1, 
         'max_iter': 50,
         'ctr_clamp': None,
