@@ -29,10 +29,6 @@ class Criterion(object):
             self.matcher = OTA_Matcher(cfg, 
                                        num_classes, 
                                        box_weights=[1., 1., 1., 1.])
-        elif cfg['matcher'] == 'sim_ota':
-            print('==============================')
-            print('Matcher: SimOTA Matcher')
-            self.matcher = SimOTA(cfg, num_classes)
 
 
     def loss_labels(self, pred_cls, tgt_cls, num_boxes=1.0):
@@ -250,135 +246,11 @@ class Criterion(object):
         return loss_dict
 
 
-    # Compute loss of FCOS with SimOTA
-    def simota_losses(self, outputs, targets):
-        """
-            outputs['pred_cls']: List(Tensor) [B, M, C]
-            outputs['pred_reg']: List(Tensor) [B, M, 4]
-            outputs['pred_ctn']: List(Tensor) [B, M, 1]
-            outputs['strides']: List(Int) [8, 16, 32] output stride
-            targets: (List) [dict{'boxes': [...], 
-                                 'labels': [...], 
-                                 'orig_size': ...}, ...]
-        """
-        bs = outputs['pred_cls'][0].shape[0]
-        device = outputs['pred_cls'][0].device
-        fpn_strides = outputs['strides']
-        anchors = outputs['anchors']
-
-        # preds: [B, M, C]
-        cls_preds = torch.cat(outputs['pred_cls'], dim=1)
-        reg_preds = torch.cat(outputs['pred_reg'], dim=1)
-        ctn_preds = torch.cat(outputs['pred_ctn'], dim=1)
-
-        # label assignment
-        cls_targets = []
-        reg_targets = []
-        ctn_targets = []
-        fg_masks = []
-
-        for batch_idx in range(bs):
-            tgt_labels = targets[batch_idx]["labels"].to(device)
-            tgt_bboxes = targets[batch_idx]["boxes"].to(device)
-
-            # check target
-            if len(tgt_labels) == 0 or tgt_bboxes.max().item() == 0.:
-                num_anchors = sum([ab.shape[0] for ab in anchors])
-                # There is no valid gt
-                cls_target = cls_preds.new_zeros((num_anchors,)).long()
-                reg_target = cls_preds.new_zeros((0, 4))
-                ctn_target = cls_preds.new_zeros((0, 1))
-                fg_mask = cls_preds.new_zeros(num_anchors).bool()
-            else:
-                (
-                    gt_classes,
-                    fg_mask,
-                    pred_ious_this_matching,
-                    matched_gt_inds,
-                    num_fg_img,
-                ) = self.matcher(
-                    fpn_strides = fpn_strides,
-                    anchors = anchors,
-                    pred_cls = cls_preds[batch_idx],
-                    pred_reg = reg_preds[batch_idx], 
-                    tgt_labels = tgt_labels,
-                    tgt_bboxes = tgt_bboxes
-                    )
-
-                cls_target = gt_classes.long()                       # [M,]
-                reg_target = tgt_bboxes[matched_gt_inds]             # [Mp, 4]
-                ctn_target = pred_ious_this_matching.unsqueeze(-1)   # [Mp, 1]
-
-            cls_targets.append(cls_target)
-            reg_targets.append(reg_target)
-            ctn_targets.append(ctn_target)
-            fg_masks.append(fg_mask)
-
-        cls_targets = torch.cat(cls_targets, 0)   # [BM,]
-        reg_targets = torch.cat(reg_targets, 0)   # [BMp, 4]
-        ctn_targets = torch.cat(ctn_targets, 0)   # [BMp, 1]
-        fg_masks = torch.cat(fg_masks, 0)         # [BM,]
-        num_foregrounds = fg_masks.sum()
-
-        # [B, M, C] -> [BM, C]
-        cls_preds = cls_preds.view(-1, self.num_classes)
-        reg_preds = reg_preds.view(-1, 4)
-        ctn_preds = ctn_preds.view(-1, 1)
-        masks = torch.cat(outputs['mask'], dim=1).view(-1)
-
-        if is_dist_avail_and_initialized():
-            torch.distributed.all_reduce(num_foregrounds)
-        num_foregrounds = (num_foregrounds / get_world_size()).clamp(1.0)
-
-        # one-hot: [BM, C]
-        gt_classes_target = torch.zeros_like(cls_preds)
-        gt_classes_target[fg_masks, cls_targets[fg_masks]] = 1
-
-        # cls loss
-        valid_idxs = (cls_targets >= 0) & masks
-        loss_labels = self.loss_labels(
-            cls_preds[valid_idxs], 
-            gt_classes_target[valid_idxs], 
-            num_foregrounds)
-        
-        # box loss
-        matched_reg_preds = reg_preds[fg_masks]
-        ious = get_ious(matched_reg_preds,
-                        reg_targets,
-                        box_mode="xyxy",
-                        iou_type='giou')
-        loss_bboxes = (1.0 - ious).sum() / num_foregrounds
-
-        # iou loss
-        matched_iou_preds = ctn_preds[fg_masks]
-        loss_ious = F.binary_cross_entropy_with_logits(
-            matched_iou_preds,
-            ctn_targets,
-            reduction='none')
-        loss_ious = loss_ious.sum() / num_foregrounds
-
-        # total loss
-        total_loss = self.loss_cls_weight * loss_labels + \
-                     self.loss_reg_weight * loss_bboxes + \
-                     self.loss_ctn_weight * loss_ious
-
-        loss_dict = dict(
-                loss_labels = loss_labels,
-                loss_bboxes = loss_bboxes,
-                loss_ious = loss_ious,
-                total_loss = total_loss
-        )
-
-        return loss_dict
-
-
     def __call__(self, outputs, targets):
         if self.cfg['matcher'] == 'matcher':
             return self.basic_losses(outputs, targets)
         elif self.cfg['matcher'] == 'ota':
             return self.ota_losses(outputs, targets)
-        elif self.cfg['matcher'] == 'sim_ota':
-            return self.simota_losses(outputs, targets)
 
 
 # build criterion

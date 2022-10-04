@@ -34,7 +34,6 @@ fcos_config = {
         'num_reg_heads': 4,
         'head_act_type': 'relu',
         'head_norm_type': 'GN',
-        'decode_bbox': False,
         # post process
         'conf_thresh': 0.1,
         'nms_thresh': 0.5,
@@ -105,7 +104,6 @@ fcos_config = {
         'num_reg_heads': 4,
         'head_act_type': 'relu',
         'head_norm_type': 'GN',
-        'decode_bbox': False,
         # post process
         'conf_thresh': 0.1,
         'nms_thresh': 0.5,
