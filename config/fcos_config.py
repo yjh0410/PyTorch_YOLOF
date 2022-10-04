@@ -199,7 +199,7 @@ fcos_config = {
         'bk_act_type': 'relu',
         'bk_norm_type': 'BN',
         # fpn neck
-        'fpn': 'fpn',
+        'fpn': 'basic_fpn',
         'from_c5': False,
         'p6_feat': False,
         'p7_feat': False,
