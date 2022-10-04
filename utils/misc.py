@@ -85,7 +85,7 @@ def vis_data(images, targets, masks):
 
 def build_dataset(cfg, args, device):
     # transform
-    trans_config = cfg['transforms'][args.schedule]
+    trans_config = cfg['transforms']
     print('==============================')
     print('TrainTransforms: {}'.format(trans_config))
     train_transform = TrainTransforms(
