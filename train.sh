@@ -5,5 +5,5 @@ python train.py \
         -v fcos-r50-RT \
         --batch_size 16 \
         --schedule 3x \
-        --eval_epoch 2 \
+        --eval_epoch 1 \
         --grad_clip_norm 4.0 \
