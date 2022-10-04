@@ -373,11 +373,15 @@ class Resize(object):
 
         # resize
         if self.min_size == self.max_size:
-            # donot keep aspect ratio
+            # long edge resize
             img_h0, img_w0 = image.shape[1:]
-            image = F.resize(image, size=[min_size, min_size])
+
+            r = min_size / max(img_h0, img_w0)
+            if r != 1: 
+                size = [int(img_h0 * r), int(img_w0 * r)]
+                image = F.resize(image, size=size)
         else:
-            # keep aspect ratio
+            # short edge resize
             img_h0, img_w0 = image.shape[1:]
             min_original_size = float(min((img_w0, img_h0)))
             max_original_size = float(max((img_w0, img_h0)))
