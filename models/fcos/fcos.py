@@ -275,6 +275,9 @@ class FCOS(nn.Module):
                 # generate anchors: [M, 2]
                 anchors = self.generate_anchors(level, fmp_size)
                 all_anchors.append(anchors)
+
+                if self.cfg['decode_bbox']:
+                    reg_pred = self.decode_boxes(anchors, reg_pred)
             
                 all_cls_preds.append(cls_pred)
                 all_reg_preds.append(reg_pred)
