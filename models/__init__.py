@@ -18,5 +18,5 @@ def build_model(args,
                         'yolof-r50-RT', 'yolof-r101', 'yolof-r101-DC5']:
         return build_yolof(args, cfg, device, num_classes, trainable, pretrained, eval_mode)
 
-    elif args.version in ['fcos-r18', 'fcos-r50', 'fcos-r50-RT', 'fcos-r101']:
+    elif args.version in ['fcos-r18', 'fcos-r50', 'fcos-rt-r50', 'fcos-r101']:
         return build_fcos(args, cfg, device, num_classes, trainable, pretrained, eval_mode)

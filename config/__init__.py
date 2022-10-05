@@ -7,5 +7,5 @@ def build_config(args):
                         'yolof-r50-RT', 'yolof-r101', 'yolof-r101-DC5']:
         return yolof_config[args.version]
 
-    elif args.version in ['fcos-r18', 'fcos-r50', 'fcos-r50-RT', 'fcos-r101']:
+    elif args.version in ['fcos-r18', 'fcos-r50', 'fcos-rt-r50', 'fcos-r101']:
         return fcos_config[args.version]
