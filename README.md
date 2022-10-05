@@ -40,7 +40,7 @@ I would be very grateful if you used this project to train them and would like t
 | Model             |  scale     |  FPS  |   AP   |  AP50  | Weight |
 |-------------------|------------|-------|--------|--------|--------|
 | FCOS_R18_1x       |  800,1333  |  42   |  33.0  |  51.3  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/fcos-r18_1x_33.0.pth) |
-| FCOS_R50_1x       |  800,1333  |     |    |    | [github]() |
+| FCOS_R50_1x       |  800,1333  |  30   |  38.2  |  58.0  | [github]() |
 
 
 - Visualization
