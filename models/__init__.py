@@ -15,7 +15,7 @@ def build_model(args,
     print('Build {} ...'.format(args.version.upper()))
 
     if args.version in ['yolof-r18', 'yolof-r50', 'yolof-r50-DC5',
-                        'yolof-r50-RT', 'yolof-r101', 'yolof-r101-DC5']:
+                        'yolof-rt-r50', 'yolof-r101', 'yolof-r101-DC5']:
         return build_yolof(args, cfg, device, num_classes, trainable, pretrained, eval_mode)
 
     elif args.version in ['fcos-r18', 'fcos-r50', 'fcos-rt-r50', 'fcos-r101']:
