@@ -41,7 +41,7 @@ I would be very grateful if you used this project to train them and would like t
 |-------------------|------------|-------|--------|--------|--------|
 | FCOS_R18_1x       |  800,1333  |  42   |  33.0  |  51.3  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/fcos-r18_1x_33.0.pth) |
 | FCOS_R50_1x       |  800,1333  |  30   |  38.2  |  58.0  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/fcos-r50_1x_38.2.pth) |
-| FCOS-RT_R18_4x    |  512,736   |     |    |    | [github]() |
+| FCOS-RT_R18_4x    |  512,736   |  83   |  33.8  |  51.5  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/fcos-rt-r18_4x_33.8.pth) |
 | FCOS-RT_R50_4x    |  512,736   |  60   |  38.7  |  58.0  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/fcos-rt-r50_4x_38.7.pth) |
 
 
