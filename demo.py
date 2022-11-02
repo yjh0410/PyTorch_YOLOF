@@ -22,9 +22,9 @@ def parse_args():
                         type=str, help='Use the data from image, video or camera')
     parser.add_argument('--cuda', action='store_true', default=False,
                         help='Use cuda')
-    parser.add_argument('--path_to_img', default='data/demo/images/',
+    parser.add_argument('--path_to_img', default='dataset/demo/images/',
                         type=str, help='The path to image files')
-    parser.add_argument('--path_to_vid', default='data/demo/videos/',
+    parser.add_argument('--path_to_vid', default='dataset/demo/videos/',
                         type=str, help='The path to video files')
     parser.add_argument('--path_to_save', default='det_results/',
                         type=str, help='The path to save the detection results')
