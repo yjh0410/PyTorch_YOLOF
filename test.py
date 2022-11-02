@@ -5,9 +5,9 @@ import time
 import numpy as np
 import torch
 
-from data.voc import VOC_CLASSES, VOCDetection
-from data.coco import coco_class_index, coco_class_labels, COCODataset
-from data.transforms import ValTransforms
+from dataset.voc import VOC_CLASSES, VOCDetection
+from dataset.coco import coco_class_index, coco_class_labels, COCODataset
+from dataset.transforms import ValTransforms
 from utils.misc import load_weight
 
 from models import build_model

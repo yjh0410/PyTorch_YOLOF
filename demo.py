@@ -5,8 +5,8 @@ import time
 import numpy as np
 import torch
 
-from data.coco import coco_class_index, coco_class_labels
-from data.transforms import ValTransforms
+from dataset.coco import coco_class_index, coco_class_labels
+from dataset.transforms import ValTransforms
 from utils.misc import load_weight
 
 from models import build_model

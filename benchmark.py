@@ -4,8 +4,8 @@ import time
 import os
 import torch
 
-from data.transforms import ValTransforms
-from data.coco import COCODataset, coco_class_index, coco_class_labels
+from dataset.transforms import ValTransforms
+from dataset.coco import COCODataset, coco_class_index, coco_class_labels
 from utils.com_flops_params import FLOPs_and_Params
 from utils import fuse_conv_bn
 from utils.misc import load_weight

@@ -1,7 +1,7 @@
 import json
 import tempfile
 import torch
-from data.coco import *
+from dataset.coco import *
 
 try:
     from pycocotools.cocoeval import COCOeval

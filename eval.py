@@ -6,7 +6,7 @@ import torch
 from evaluator.voc_evaluator import VOCAPIEvaluator
 from evaluator.coco_evaluator import COCOAPIEvaluator
 
-from data.transforms import ValTransforms
+from dataset.transforms import ValTransforms
 
 from utils.misc import load_weight
 

@@ -7,9 +7,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, DistributedSampler
 
-from data.voc import VOCDetection
-from data.coco import COCODataset
-from data.transforms import TrainTransforms, ValTransforms, BaseTransforms
+from dataset.voc import VOCDetection
+from dataset.coco import COCODataset
+from dataset.transforms import TrainTransforms, ValTransforms, BaseTransforms
 from evaluator.coco_evaluator import COCOAPIEvaluator
 from evaluator.voc_evaluator import VOCAPIEvaluator
 
