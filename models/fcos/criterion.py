@@ -143,9 +143,10 @@ class Criterion(object):
             num_boxes=num_targets)
 
         # centerness loss
-        loss_centerness = F.binary_cross_entropy_with_logits(pred_ctn[foreground_idxs], 
-                                                             gt_centerness[foreground_idxs], 
-                                                             reduction='none')
+        loss_centerness = F.binary_cross_entropy_with_logits(
+            pred_ctn[foreground_idxs], 
+            gt_centerness[foreground_idxs], 
+            reduction='none')
 
         loss_centerness = loss_centerness.sum() / num_foreground
 
