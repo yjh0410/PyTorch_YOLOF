@@ -1,6 +1,7 @@
 import torch
 from .yolof.build import build_yolof
 from .fcos.build import build_fcos
+from .retinanet.build import build_retinanet
 
 
 # build object detector
@@ -20,3 +21,7 @@ def build_model(args,
 
     elif args.version in ['fcos-r18', 'fcos-r50', 'fcos-r101', 'fcos-rt-r18', 'fcos-rt-r50']:
         return build_fcos(args, cfg, device, num_classes, trainable, pretrained, eval_mode)
+
+    elif args.version in ['retinanet-r18', 'retinanet-r50', 'retinanet-r101',
+                          'retinanet-rt-r18', 'retinanet-rt-r50']:
+        return build_retinanet(args, cfg, device, num_classes, trainable, pretrained, eval_mode)
