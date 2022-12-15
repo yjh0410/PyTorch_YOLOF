@@ -2,8 +2,8 @@ python train.py \
         --cuda \
         -d coco \
         --root /mnt/share/ssd2/dataset/ \
-        -v fcos-rt-r18 \
+        -v retinanet-r18 \
         --batch_size 16 \
-        --schedule 4x \
-        --eval_epoch 1 \
+        --schedule 1x \
+        --eval_epoch 2 \
         --grad_clip_norm 4.0 \

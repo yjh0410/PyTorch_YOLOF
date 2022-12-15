@@ -188,7 +188,7 @@ retinanet_config = {
         'conf_thresh_val': 0.05,
         'nms_thresh_val': 0.6,
         # anchor box
-        'anchor_config': {'basic_size': [[32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
+        'anchor_config': {'basic_size': [[32, 32], [64, 64], [128, 128], [256, 256]],
                           'aspect_ratio': [0.5, 1.0, 2.0],
                           'area_scale': [2 ** 0, 2 ** (1. / 3.), 2 ** (2. / 3.)]},
         # matcher
@@ -256,7 +256,7 @@ retinanet_config = {
         'conf_thresh_val': 0.05,
         'nms_thresh_val': 0.6,
         # anchor box
-        'anchor_config': {'basic_size': [[32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
+        'anchor_config': {'basic_size': [[32, 32], [64, 64], [128, 128], [256, 256]],
                           'aspect_ratio': [0.5, 1.0, 2.0],
                           'area_scale': [2 ** 0, 2 ** (1. / 3.), 2 ** (2. / 3.)]},
         # matcher
