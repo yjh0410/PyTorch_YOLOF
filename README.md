@@ -48,7 +48,14 @@ I would be very grateful if you used this project to train them and would like t
 | FCOS-RT_R18_4x    |  512,736   |  83   |  33.8  |  51.5  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/fcos-rt-r18_4x_33.8.pth) |
 | FCOS-RT_R50_4x    |  512,736   |  60   |  38.7  |  58.0  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/fcos-rt-r50_4x_38.7.pth) |
 
+- AP results of RetiniaNet
 
+| Model               |  scale     |  FPS  |   AP   |  AP50  | Weight |
+|---------------------|------------|-------|--------|--------|--------|
+| RetinaNet_R18_1x    |  800,1333  |     |    |    |  |
+| RetinaNet_R50_1x    |  800,1333  |     |    |    |  |
+| RetinaNet-RT_R18_4x |  512,736   |     |    |    |  |
+| RetinaNet-RT_R50_4x |  512,736   |     |    |    |  |
 
 - Visualization
 
