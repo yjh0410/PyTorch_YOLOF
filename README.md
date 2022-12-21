@@ -52,7 +52,7 @@ I would be very grateful if you used this project to train them and would like t
 
 | Model               |  scale     |  FPS  |   AP   |  AP50  | Weight |
 |---------------------|------------|-------|--------|--------|--------|
-| RetinaNet_R18_1x    |  800,1333  |     |    |    |  |
+| RetinaNet_R18_1x    |  800,1333  |     |  30.8  |  49.6  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/retinanet-r18_1x_30.8.pth) |
 | RetinaNet_R50_1x    |  800,1333  |     |    |    |  |
 | RetinaNet-RT_R18_4x |  512,736   |     |    |    |  |
 | RetinaNet-RT_R50_4x |  512,736   |     |    |    |  |
