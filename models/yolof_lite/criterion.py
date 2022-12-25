@@ -1,136 +1,182 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .matcher import SimOTA
-from utils.box_ops import get_ious
-from utils.misc import sigmoid_focal_loss
+from utils.box_ops import *
 from utils.distributed_utils import get_world_size, is_dist_avail_and_initialized
 
+from .matcher import UniformMatcher
 
 
-class Criterion(object):
+class SigmoidFocalWithLogitsLoss(nn.Module):
+    """
+        focal loss with sigmoid
+    """
+    def __init__(self, reduction='mean', gamma=2.0, alpha=0.25):
+        super(SigmoidFocalWithLogitsLoss, self).__init__()
+        self.reduction = reduction
+        self.gamma = gamma
+        self.alpha = alpha
+
+    def forward(self, logits, targets):
+        p = torch.sigmoid(logits)
+        ce_loss = F.binary_cross_entropy_with_logits(input=logits, 
+                                                     target=targets, 
+                                                     reduction="none")
+        p_t = p * targets + (1.0 - p) * (1.0 - targets)
+        loss = ce_loss * ((1.0 - p_t) ** self.gamma)
+
+        if self.alpha >= 0:
+            alpha_t = self.alpha * targets + (1.0 - self.alpha) * (1.0 - targets)
+            loss = alpha_t * loss
+
+        if self.reduction == "mean":
+            loss = loss.mean()
+
+        elif self.reduction == "sum":
+            loss = loss.sum()
+
+        return loss
+
+
+class Criterion(nn.Module):
     def __init__(self, cfg, device, num_classes=80):
+        super().__init__()
         self.cfg = cfg
         self.device = device
-        self.num_classes = num_classes
         self.alpha = cfg['alpha']
         self.gamma = cfg['gamma']
+        self.matcher = UniformMatcher(cfg['topk'])
+        self.num_classes = num_classes
         self.loss_cls_weight = cfg['loss_cls_weight']
         self.loss_reg_weight = cfg['loss_reg_weight']
-        # matcher
-        matcher_config = cfg['matcher']
-        self.matcher = SimOTA(
-            num_classes=num_classes,
-            center_sampling_radius=matcher_config['center_sampling_radius'],
-            topk_candidate=matcher_config['topk_candicate']
-            )
+
+        self.cls_loss_f = SigmoidFocalWithLogitsLoss(reduction='none', gamma=cfg['gamma'], alpha=cfg['alpha'])
 
 
-    def __call__(self, outputs, targets):        
+    def loss_labels(self, pred_cls, tgt_cls, num_boxes):
         """
-            outputs['pred_obj']: List(Tensor) [B, M, 1]
-            outputs['pred_cls']: List(Tensor) [B, M, C]
-            outputs['pred_box']: List(Tensor) [B, M, 4]
-            outputs['strides']: List(Int) [8, 16, 32] output stride
+            pred_cls: (Tensor) [N, C]
+            tgt_cls:  (Tensor) [N, C]
+        """
+        # cls loss: [V, C]
+        loss_cls = self.cls_loss_f(pred_cls, tgt_cls)
+
+        return loss_cls.sum() / num_boxes
+
+
+    def loss_bboxes(self, pred_box, tgt_box, num_boxes):
+        """
+            pred_box: (Tensor) [N, 4]
+            tgt_box:  (Tensor) [N, 4]
+        """
+        # giou
+        pred_giou = generalized_box_iou(pred_box, tgt_box)  # [N, M]
+        # giou loss
+        loss_reg = 1. - torch.diag(pred_giou)
+
+        return loss_reg.sum() / num_boxes
+
+
+    def forward(self, outputs, targets):
+        """
+            outputs['pred_cls']: (Tensor) [B, M, C]
+            outputs['pred_box']: (Tensor) [B, M, 4]
             targets: (List) [dict{'boxes': [...], 
                                  'labels': [...], 
                                  'orig_size': ...}, ...]
         """
-        bs = outputs['pred_cls'].shape[0]
-        device = outputs['pred_cls'].device
-        stride = outputs['stride']
-        anchors = outputs['anchors']
-        num_anchors = anchors.shape[0]
-        # preds: [B, M, C]
-        cls_pred = outputs['pred_cls']
-        box_pred = outputs['pred_box']
+        pred_box = outputs['pred_box']
+        pred_cls = outputs['pred_cls'].reshape(-1, self.num_classes)
+        anchor_boxes = outputs['anchors']
+        B = len(targets)
 
-        # label assignment
-        cls_targets = []
-        box_targets = []
-        fg_masks = []
+        # Matcher
+        indices = self.matcher(pred_box, anchor_boxes, targets)
 
-        for batch_idx in range(bs):
-            tgt_labels = targets[batch_idx]["labels"].to(device)
-            tgt_bboxes = targets[batch_idx]["boxes"].to(device)
+        # [M, 4] -> [1, M, 4] -> [B, M, 4]
+        anchor_boxes = box_cxcywh_to_xyxy(anchor_boxes)
+        anchor_boxes = anchor_boxes[None].repeat(B, 1, 1)
 
-            # check target
-            if len(tgt_labels) == 0 or tgt_bboxes.max().item() == 0.:
-                # There is no valid gt
-                cls_target = cls_pred.new_zeros((num_anchors, self.num_classes))
-                box_target = cls_pred.new_zeros((0, 4))
-                fg_mask = cls_pred.new_zeros(num_anchors).bool()
+        ious = []
+        pos_ious = []
+        for i in range(B):
+            src_idx, tgt_idx = indices[i]
+            # iou between predbox and tgt box
+            iou, _ = box_iou(pred_box[i, ...], (targets[i]['boxes']).clone())
+            if iou.numel() == 0:
+                max_iou = iou.new_full((iou.size(0),), 0)
             else:
-                (
-                    gt_matched_classes,
-                    fg_mask,
-                    matched_gt_inds,
-                ) = self.matcher(
-                    stride = stride,
-                    anchors = anchors,
-                    pred_cls = cls_pred[batch_idx], 
-                    pred_box = box_pred[batch_idx],
-                    tgt_labels = tgt_labels,
-                    tgt_bboxes = tgt_bboxes
-                    )
-                # class target
-                tgt_cls_ot = F.one_hot(gt_matched_classes.long(), self.num_classes)
-                cls_target = cls_pred.new_zeros((num_anchors, self.num_classes))
-                cls_target[fg_mask] = tgt_cls_ot.float()
-                # box target
-                box_target = tgt_bboxes[matched_gt_inds]
+                max_iou = iou.max(dim=1)[0]
+            # iou between anchorbox and tgt box
+            a_iou, _ = box_iou(anchor_boxes[i], (targets[i]['boxes']).clone())
+            if a_iou.numel() == 0:
+                pos_iou = a_iou.new_full((0,), 0)
+            else:
+                pos_iou = a_iou[src_idx, tgt_idx]
+            ious.append(max_iou)
+            pos_ious.append(pos_iou)
 
-            cls_targets.append(cls_target)
-            box_targets.append(box_target)
-            fg_masks.append(fg_mask)
+        ious = torch.cat(ious)
+        ignore_idx = ious > self.cfg['igt']
+        pos_ious = torch.cat(pos_ious)
+        pos_ignore_idx = pos_ious < self.cfg['iou_t']
 
-        cls_targets = torch.cat(cls_targets, 0)
-        box_targets = torch.cat(box_targets, 0)
-        fg_masks = torch.cat(fg_masks, 0)
-        num_foregrounds = fg_masks.sum()
+        src_idx = torch.cat(
+            [src + idx * anchor_boxes[0].shape[0] for idx, (src, _) in
+             enumerate(indices)])
+        # [BM,]
+        gt_cls = torch.full(pred_cls.shape[:1],
+                                self.num_classes,
+                                dtype=torch.int64,
+                                device=self.device)
+        gt_cls[ignore_idx] = -1
+        tgt_cls_o = torch.cat([t['labels'][J] for t, (_, J) in zip(targets, indices)])
+        tgt_cls_o[pos_ignore_idx] = -1
+
+        gt_cls[src_idx] = tgt_cls_o.to(self.device)
+
+        foreground_idxs = (gt_cls >= 0) & (gt_cls != self.num_classes)
+        num_foreground = foreground_idxs.sum()
+
+        gt_cls_target = torch.zeros_like(pred_cls)
+        gt_cls_target[foreground_idxs, gt_cls[foreground_idxs]] = 1
 
         if is_dist_avail_and_initialized():
-            torch.distributed.all_reduce(num_foregrounds)
-        num_foregrounds = (num_foregrounds / get_world_size()).clamp(1.0)
-        
-        # classification loss
-        valid_idxs = outputs['mask'].view(-1)
-        cls_pred = cls_pred.view(-1, self.num_classes)
-        loss_labels = sigmoid_focal_loss(
-            cls_pred[valid_idxs], cls_targets[valid_idxs],
-            self.alpha, self.gamma, reduction='none')
-        loss_labels = loss_labels.sum() / num_foregrounds
+            torch.distributed.all_reduce(num_foreground)
+        num_foreground = torch.clamp(num_foreground / get_world_size(), min=1).item()
 
-        # regression loss
-        matched_box_pred = box_pred.view(-1, 4)[fg_masks]
-        ious = get_ious(matched_box_pred,
-                        box_targets,
-                        box_mode="xyxy",
-                        iou_type='giou')
-        loss_bboxes = (1.0 - ious).sum() / num_foregrounds
+        # cls loss
+        masks = outputs['mask']
+        valid_idxs = (gt_cls >= 0) & masks
+        loss_labels = self.loss_labels(pred_cls[valid_idxs], 
+                                       gt_cls_target[valid_idxs], 
+                                       num_foreground)
+
+        # box loss
+        tgt_boxes = torch.cat([t['boxes'][i]
+                                    for t, (_, i) in zip(targets, indices)], dim=0).to(self.device)
+        tgt_boxes = tgt_boxes[~pos_ignore_idx]
+        matched_pred_box = pred_box.reshape(-1, 4)[src_idx[~pos_ignore_idx]]
+        loss_bboxes = self.loss_bboxes(matched_pred_box, 
+                                       tgt_boxes, 
+                                       num_foreground)
 
         # total loss
-        losses = self.loss_cls_weight * loss_labels + \
-                 self.loss_reg_weight * loss_bboxes
+        losses = self.loss_cls_weight * loss_labels + self.loss_reg_weight * loss_bboxes
 
         loss_dict = dict(
-                loss_labels = loss_labels,
-                loss_bboxes = loss_bboxes,
-                total_loss = losses
+            cls_loss=loss_labels,
+            reg_loss=loss_bboxes,
+            total_loss=losses
         )
 
         return loss_dict
-    
 
-def build_criterion(cfg, device, num_classes):
-    criterion = Criterion(
-        cfg=cfg,
-        device=device,
-        num_classes=num_classes
-        )
 
+def build_criterion(cfg, device, num_classes=80):
+    criterion = Criterion(cfg=cfg, device=device, num_classes=num_classes)
     return criterion
 
-
+    
 if __name__ == "__main__":
     pass

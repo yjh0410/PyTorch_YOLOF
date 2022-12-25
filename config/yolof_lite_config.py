@@ -44,9 +44,10 @@ yolof_lite_config = {
         # anchor box
         'anchor_size': [[32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
         # matcher
-        'matcher': {'center_sampling_radius': 1.5,
-                    'topk_candicate': 5},
-        'ctr_clamp': None,
+        'topk': 4,
+        'iou_t': 0.15,
+        'igt': 0.7,
+        'ctr_clamp': 32,
         # loss
         'alpha': 0.25,
         'gamma': 2.0,
@@ -116,9 +117,10 @@ yolof_lite_config = {
         # anchor box
         'anchor_size': [[32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
         # matcher
-        'matcher': {'center_sampling_radius': 1.5,
-                    'topk_candicate': 5},
-        'ctr_clamp': None,
+        'topk': 4,
+        'iou_t': 0.15,
+        'igt': 0.7,
+        'ctr_clamp': 32,
         # loss
         'alpha': 0.25,
         'gamma': 2.0,
@@ -188,9 +190,10 @@ yolof_lite_config = {
         # anchor box
         'anchor_size': [[32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
         # matcher
-        'matcher': {'center_sampling_radius': 1.5,
-                    'topk_candicate': 5},
-        'ctr_clamp': None,
+        'topk': 8,
+        'iou_t': 0.1,
+        'igt': 0.7,
+        'ctr_clamp': 32,
         # loss
         'alpha': 0.25,
         'gamma': 2.0,
@@ -265,10 +268,10 @@ yolof_lite_config = {
         # anchor box
         'anchor_size': [[16, 16], [32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
         # matcher
-        'matcher': {'center_sampling_radius': 1.5,
-                    'topk_candicate': 5},
-        'ctr_clamp': None,
-        # loss
+        'topk': 8,
+        'iou_t': 0.1,
+        'igt': 0.7,
+        'ctr_clamp': 32,
         'alpha': 0.25,
         'gamma': 2.0,
         'loss_cls_weight': 1.0,

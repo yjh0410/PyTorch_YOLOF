@@ -208,7 +208,6 @@ class YOLOF_Lite(nn.Module):
             outputs = {"pred_cls": cls_pred,
                        "pred_box": box_pred,
                        "anchors": anchor_boxes,
-                       "stride": self.stride,
                        "mask": mask}
 
             return outputs 
