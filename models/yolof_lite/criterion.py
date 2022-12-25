@@ -57,7 +57,7 @@ class Criterion(object):
             # check target
             if len(tgt_labels) == 0 or tgt_bboxes.max().item() == 0.:
                 # There is no valid gt
-                cls_target = cls_pred.new_zeros((0, self.num_classes))
+                cls_target = cls_pred.new_zeros((num_anchors, self.num_classes))
                 box_target = cls_pred.new_zeros((0, 4))
                 fg_mask = cls_pred.new_zeros(num_anchors).bool()
             else:
@@ -95,8 +95,6 @@ class Criterion(object):
         
         # classification loss
         valid_idxs = outputs['mask'].view(-1)
-        print(valid_idxs.shape, outputs['mask'].shape)
-        print(cls_pred.shape, cls_targets.shape)
         cls_pred = cls_pred.view(-1, self.num_classes)
         loss_labels = sigmoid_focal_loss(
             cls_pred[valid_idxs], cls_targets[valid_idxs],
