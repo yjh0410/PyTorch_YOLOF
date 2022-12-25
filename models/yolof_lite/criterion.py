@@ -95,6 +95,8 @@ class Criterion(object):
         
         # classification loss
         valid_idxs = outputs['mask'].view(-1)
+        print(valid_idxs.shape, outputs['mask'].shape)
+        print(cls_pred.shape, cls_targets.shape)
         cls_pred = cls_pred.view(-1, self.num_classes)
         loss_labels = sigmoid_focal_loss(
             cls_pred[valid_idxs], cls_targets[valid_idxs],
