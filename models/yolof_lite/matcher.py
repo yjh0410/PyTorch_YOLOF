@@ -56,7 +56,7 @@ class SimOTA(object):
         )
 
         # [N, Mp, C]
-        score_preds_ = cls_preds_.float().unsqueeze(0).repeat(num_gt, 1, 1).sigmoid_()
+        score_preds_ = cls_preds_.float().unsqueeze(0).repeat(num_gt, 1, 1)
         
         pair_wise_cls_loss = sigmoid_focal_loss(
             score_preds_, gt_cls, reduction="none"
