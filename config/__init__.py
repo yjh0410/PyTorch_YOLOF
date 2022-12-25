@@ -1,7 +1,6 @@
 from .yolof_config import yolof_config
 from .fcos_config import fcos_config
 from .retinanet_config import retinanet_config
-from .yolof_lite_config import yolof_lite_config
 
 
 def build_config(args):
@@ -15,8 +14,4 @@ def build_config(args):
     elif args.version in ['retinanet-r18', 'retinanet-r50', 'retinanet-r101',
                           'retinanet-rt-r18', 'retinanet-rt-r50']:
         return retinanet_config[args.version]
-
-    elif args.version in ['yolof-lite-r18', 'yolof-lite-r50', 'yolof-lite-r50-DC5',
-                          'yolof-lite-r101', 'yolof-lite-r101-DC5', 'yolof-lite-rt-r50']:
-        return yolof_lite_config[args.version]
  
