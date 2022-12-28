@@ -36,7 +36,7 @@ def parse_args():
 
 
 def voc_test(model, data_dir, device, transform):
-    evaluator = VOCAPIEvaluator(data_root=data_dir,
+    evaluator = VOCAPIEvaluator(data_dir=data_dir,
                                 device=device,
                                 transform=transform,
                                 display=True)
