@@ -39,6 +39,12 @@ My environment:
 Limited by my computing resources, I cannot train `YOLOF_R101_C5_1x`, `YOLOF_R101_DC5_1x`.
 I would be very grateful if you used this project to train them and would like to share weight files.
 
+- Visualization
+
+(YOLOF_R50-C5_1x)
+
+![image](./img_files/coco_samples.png)
+
 - AP results of **FCOS**
 
 | Model             |  scale     |  FPS  |   AP   |  AP50  | Weight |
@@ -56,12 +62,6 @@ I would be very grateful if you used this project to train them and would like t
 | RetinaNet_R50_1x    |  800,1333  |     |    |    |  |
 | RetinaNet-RT_R18_4x |  512,736   |     |    |    |  |
 | RetinaNet-RT_R50_4x |  512,736   |     |    |    |  |
-
-- Visualization
-
-(YOLOF_R50-C5_1x)
-
-![image](./img_files/coco_samples.png)
 
 # Train
 - Single GPU

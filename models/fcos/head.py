@@ -20,19 +20,20 @@ class DecoupledHead(nn.Module):
             bias = True
         else:
             bias = False
-
-        self.cls_feats = nn.Sequential(*[Conv(head_dim, 
-                                              head_dim, 
-                                              k=3, p=1, s=1, 
-                                              act_type=act_type, 
-                                              norm_type=norm_type,
-                                              bias=bias) for _ in range(num_cls_heads)])
-        self.reg_feats = nn.Sequential(*[Conv(head_dim, 
-                                              head_dim, 
-                                              k=3, p=1, s=1, 
-                                              act_type=act_type, 
-                                              norm_type=norm_type,
-                                              bias=bias) for _ in range(num_reg_heads)])
+            
+        # class branch 
+        self.cls_feats = nn.Sequential(*[
+            Conv(head_dim, head_dim, k=3, p=1, s=1, 
+                 act_type=act_type,
+                 orm_type=norm_type,
+                 bias=bias)
+                 for _ in range(num_cls_heads)])
+        self.reg_feats = nn.Sequential(*[
+            Conv(head_dim, head_dim, k=3, p=1, s=1,
+                 act_type=act_type, 
+                 norm_type=norm_type,
+                 bias=bias)
+                 for _ in range(num_reg_heads)])
 
         # pred
         self.cls_pred = nn.Conv2d(head_dim, num_classes,  kernel_size=3, padding=1)
