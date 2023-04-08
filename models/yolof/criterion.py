@@ -1,3 +1,6 @@
+# https://github.com/megvii-model/YOLOF/blob/main/playground/detection/coco/yolof/yolof_base/yolof.py
+
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
