@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .matcher import Matcher, OTA_Matcher, SimOTA
+from .matcher import Matcher, OTA_Matcher
 from utils.box_ops import *
 from utils.misc import sigmoid_focal_loss
 from utils.distributed_utils import get_world_size, is_dist_avail_and_initialized

@@ -1,4 +1,6 @@
-# https://github.com/megvii-model/YOLOF/blob/main/playground/detection/coco/yolof/yolof_base/uniform_matcher.py
+# ---------------------------------------------------------------------
+# Copyright (c) Megvii Inc. All rights reserved.
+# ---------------------------------------------------------------------
 
 
 import numpy as np
@@ -9,6 +11,7 @@ from utils.box_ops import *
 
 class UniformMatcher(nn.Module):
     """
+    This code referenced to https://github.com/megvii-model/YOLOF/blob/main/playground/detection/coco/yolof/yolof_base/uniform_matcher.py
     Uniform Matching between the anchors and gt boxes, which can achieve
     balance in positive anchors.
 

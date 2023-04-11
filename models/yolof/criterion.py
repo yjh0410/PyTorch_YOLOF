@@ -1,4 +1,6 @@
-# https://github.com/megvii-model/YOLOF/blob/main/playground/detection/coco/yolof/yolof_base/yolof.py
+# ---------------------------------------------------------------------
+# Copyright (c) Megvii Inc. All rights reserved.
+# ---------------------------------------------------------------------
 
 
 import torch
@@ -42,6 +44,9 @@ class SigmoidFocalWithLogitsLoss(nn.Module):
 
 
 class Criterion(nn.Module):
+    """
+        This code referenced to https://github.com/megvii-model/YOLOF/blob/main/playground/detection/coco/yolof/yolof_base/yolof.py
+    """
     def __init__(self, cfg, device, num_classes=80):
         super().__init__()
         self.cfg = cfg
