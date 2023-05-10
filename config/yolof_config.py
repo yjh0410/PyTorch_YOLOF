@@ -3,7 +3,7 @@
 
 yolof_config = {
     'yolof-r18': {
-        # input
+        # ----------------- PreProcess -----------------
         'train_min_size': 800,
         'train_max_size': 1333,
         'test_min_size': 800,
@@ -18,49 +18,55 @@ yolof_config = {
                        {'name': 'ToTensor'},
                        {'name': 'Resize'},
                        {'name': 'Normalize'}],
-        # model
+        # ----------------- Network Parameters -----------------
+        ## Backbone
         'backbone': 'resnet18',
         'res5_dilation': False,
         'stride': 32,
         'bk_act_type': 'relu',
         'bk_norm_type': 'FrozeBN',
-        # encoder
+        ## Neck: DilatedEncoder
         'dilation_list': [2, 4, 6, 8],
         'encoder_dim': 512,
         'expand_ratio': 0.25,
         'encoder_act_type': 'relu',
         'encoder_norm_type': 'BN',
-        # decoder
+        ## Head
         'num_cls_heads': 2,
         'num_reg_heads': 4,
         'decoder_act_type': 'relu',
         'decoder_norm_type': 'BN',
-        # post process
+        # ----------------- PostProcess -----------------
         'conf_thresh': 0.1,
         'nms_thresh': 0.5,
         'conf_thresh_val': 0.05,
         'nms_thresh_val': 0.6,
-        # anchor box
+        # ----------------- Anchor box Configuration -----------------
         'anchor_size': [[32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
-        # matcher
+        # ----------------- Label Assignment -----------------
+        ## UniformMatcher
         'topk': 4,
         'iou_t': 0.15,
         'igt': 0.7,
         'ctr_clamp': 32,
-        # loss
+        # ----------------- Loss Configuration-----------------
+        ## Loss hyper-parameters
         'alpha': 0.25,
         'gamma': 2.0,
         'loss_cls_weight': 1.0,
         'loss_reg_weight': 1.0,
-        # optimizer
-        'base_lr': 0.12 / 64,
-        'bk_lr_ratio': 1.0 / 3.0,
+        # ----------------- Training Configuration -----------------
+        ## optimizer
         'optimizer': 'sgd',
         'momentum': 0.9,
         'weight_decay': 1e-4,
+        'base_lr': 0.12 / 64,
+        'bk_lr_ratio': 1.0 / 3.0,
+        ## Warmup
         'warmup': 'linear',
         'wp_iter': 1500,
         'warmup_factor': 0.00066667,
+        ## Epoch
         'epoch': {
             '1x': {'max_epoch': 12, 
                     'lr_epoch': [8, 11], 
@@ -75,7 +81,7 @@ yolof_config = {
     },
 
     'yolof-r50': {
-        # input
+        # ----------------- PreProcess -----------------
         'train_min_size': 800,
         'train_max_size': 1333,
         'test_min_size': 800,
@@ -90,49 +96,55 @@ yolof_config = {
                        {'name': 'ToTensor'},
                        {'name': 'Resize'},
                        {'name': 'Normalize'}],
-        # model
+        # ----------------- Network Parameters -----------------
+        ## Backbone
         'backbone': 'resnet50',
         'res5_dilation': False,
         'stride': 32,
         'bk_act_type': 'relu',
         'bk_norm_type': 'FrozeBN',
-        # encoder
+        ## Neck: DilatedEncoder
         'dilation_list': [2, 4, 6, 8],
         'encoder_dim': 512,
         'expand_ratio': 0.25,
         'encoder_act_type': 'relu',
         'encoder_norm_type': 'BN',
-        # decoder
+        ## Head
         'num_cls_heads': 2,
         'num_reg_heads': 4,
         'decoder_act_type': 'relu',
         'decoder_norm_type': 'BN',
-        # post process
+        # ----------------- PostProcess -----------------
         'conf_thresh': 0.1,
         'nms_thresh': 0.5,
         'conf_thresh_val': 0.05,
         'nms_thresh_val': 0.6,
-        # anchor box
+        # ----------------- Anchor box Configuration -----------------
         'anchor_size': [[32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
-        # matcher
+        # ----------------- Label Assignment -----------------
+        ## UniformMatcher
         'topk': 4,
         'iou_t': 0.15,
         'igt': 0.7,
         'ctr_clamp': 32,
-        # loss
+        # ----------------- Loss Configuration-----------------
+        ## Loss hyper-parameters
         'alpha': 0.25,
         'gamma': 2.0,
         'loss_cls_weight': 1.0,
         'loss_reg_weight': 1.0,
-        # optimizer
-        'base_lr': 0.12 / 64,
-        'bk_lr_ratio': 1.0 / 3.0,
+        # ----------------- Training Configuration -----------------
+        ## optimizer
         'optimizer': 'sgd',
         'momentum': 0.9,
         'weight_decay': 1e-4,
+        'base_lr': 0.12 / 64,
+        'bk_lr_ratio': 1.0 / 3.0,
+        ## Warmup
         'warmup': 'linear',
         'wp_iter': 1500,
         'warmup_factor': 0.00066667,
+        ## Epoch
         'epoch': {
             '1x': {'max_epoch': 12, 
                     'lr_epoch': [8, 11], 
@@ -147,7 +159,7 @@ yolof_config = {
     },
 
     'yolof-r50-DC5': {
-        # input
+        # ----------------- PreProcess -----------------
         'train_min_size': 800,
         'train_max_size': 1333,
         'test_min_size': 800,
@@ -162,49 +174,55 @@ yolof_config = {
                        {'name': 'ToTensor'},
                        {'name': 'Resize'},
                        {'name': 'Normalize'}],
-        # model
+        # ----------------- Network Parameters -----------------
+        ## Backbone
         'backbone': 'resnet50',
         'res5_dilation': True,
         'stride': 16,
         'bk_act_type': 'relu',
         'bk_norm_type': 'FrozeBN',
-        # encoder
+        ## Neck: DilatedEncoder
         'dilation_list': [4, 8, 12, 16],
         'encoder_dim': 512,
         'expand_ratio': 0.25,
         'encoder_act_type': 'relu',
         'encoder_norm_type': 'BN',
-        # decoder
+        ## Head
         'num_cls_heads': 2,
         'num_reg_heads': 4,
         'decoder_act_type': 'relu',
         'decoder_norm_type': 'BN',
-        # post process
+        # ----------------- PostProcess -----------------
         'conf_thresh': 0.1,
         'nms_thresh': 0.5,
         'conf_thresh_val': 0.05,
         'nms_thresh_val': 0.6,
-        # anchor box
+        # ----------------- Anchor box Configuration -----------------
         'anchor_size': [[16, 16], [32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
-        # matcher
+        # ----------------- Label Assignment -----------------
+        ## UniformMatcher
         'topk': 8,
         'iou_t': 0.1,
         'igt': 0.7,
         'ctr_clamp': 32,
-        # loss
+        # ----------------- Loss Configuration-----------------
+        ## Loss hyper-parameters
         'alpha': 0.25,
         'gamma': 2.0,
         'loss_cls_weight': 1.0,
         'loss_reg_weight': 1.0,
-        # optimizer
-        'base_lr': 0.12 / 64,
-        'bk_lr_ratio': 1.0 / 3.0,
+        # ----------------- Training Configuration -----------------
+        ## optimizer
         'optimizer': 'sgd',
         'momentum': 0.9,
         'weight_decay': 1e-4,
+        'base_lr': 0.12 / 64,
+        'bk_lr_ratio': 1.0 / 3.0,
+        ## Warmup
         'warmup': 'linear',
         'wp_iter': 1500,
         'warmup_factor': 0.00066667,
+        ## Epoch
         'epoch': {
             '1x': {'max_epoch': 12, 
                     'lr_epoch': [8, 11], 
@@ -219,7 +237,7 @@ yolof_config = {
     },
 
     'yolof-rt-r50': {
-        # input
+        # ----------------- PreProcess -----------------
         'train_min_size': 512,
         'train_max_size': 900,
         'test_min_size': 512,
@@ -239,49 +257,55 @@ yolof_config = {
                         {'name': 'ToTensor'},
                         {'name': 'Resize'},
                         {'name': 'Normalize'}],
-        # model
+        # ----------------- Network Parameters -----------------
+        ## Backbone
         'backbone': 'resnet50',
         'res5_dilation': True,
         'stride': 16,
         'bk_act_type': 'relu',
         'bk_norm_type': 'FrozeBN',
-        # encoder
+        ## Neck: DilatedEncoder
         'dilation_list': [1, 2, 4, 6, 8],
         'encoder_dim': 512,
         'expand_ratio': 0.25,
         'encoder_act_type': 'relu',
         'encoder_norm_type': 'BN',
-        # decoder
+        ## Head
         'num_cls_heads': 2,
         'num_reg_heads': 4,
         'decoder_act_type': 'relu',
         'decoder_norm_type': 'BN',
-        # post process
+        # ----------------- PostProcess -----------------
         'conf_thresh': 0.1,
         'nms_thresh': 0.5,
         'conf_thresh_val': 0.05,
         'nms_thresh_val': 0.6,
-        # anchor box
+        # ----------------- Anchor box Configuration -----------------
         'anchor_size': [[16, 16], [32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
-        # matcher
+        # ----------------- Label Assignment -----------------
+        ## UniformMatcher
         'topk': 8,
         'iou_t': 0.1,
         'igt': 0.7,
         'ctr_clamp': 32,
-        # loss
+        # ----------------- Loss Configuration-----------------
+        ## Loss hyper-parameters
         'alpha': 0.25,
         'gamma': 2.0,
         'loss_cls_weight': 1.0,
         'loss_reg_weight': 1.0,
-        # optimizer
-        'base_lr': 0.12 / 64,
-        'bk_lr_ratio': 1.0 / 3.0,
+        # ----------------- Training Configuration -----------------
+        ## optimizer
         'optimizer': 'sgd',
         'momentum': 0.9,
         'weight_decay': 1e-4,
+        'base_lr': 0.12 / 64,
+        'bk_lr_ratio': 1.0 / 3.0,
+        ## Warmup
         'warmup': 'linear',
         'wp_iter': 1500,
         'warmup_factor': 0.00066667,
+        ## Epoch
         'epoch': {
             '3x': {'max_epoch': 36, 
                     'lr_epoch': [24, 33], 
