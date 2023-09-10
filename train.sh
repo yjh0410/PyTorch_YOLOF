@@ -1,7 +1,7 @@
 python train.py \
         --cuda \
         -d coco \
-        --root /data/dataset/ \
+        --root /data/datasets/ \
         -v fcos-r18 \
         --batch_size 16 \
         --schedule 3x \
