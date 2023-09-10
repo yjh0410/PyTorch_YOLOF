@@ -25,7 +25,7 @@ class DecoupledHead(nn.Module):
         self.cls_feats = nn.Sequential(*[
             Conv(head_dim, head_dim, k=3, p=1, s=1, 
                  act_type=act_type,
-                 orm_type=norm_type,
+                 norm_type=norm_type,
                  bias=bias)
                  for _ in range(num_cls_heads)])
         self.reg_feats = nn.Sequential(*[

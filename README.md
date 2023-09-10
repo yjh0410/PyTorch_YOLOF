@@ -30,7 +30,7 @@ My environment:
 | Model                 |  scale     |  FPS  |   AP   |  AP50  | Weight |
 |-----------------------|------------|-------|--------|--------|--------|
 | YOLOF-R18-C5_1x       |  800,1333  |  100  |  32.6  |  51.3  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof_r18_C5_1x_32.6.pth) |
-| YOLOF-R50-C5_1x       |  800,1333  |  50   |  37.5  |  57.4  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof-r50-C5_1x_37.5.pth) |
+| YOLOF-R50-C5_1x       |  800,1333  |  50   |  37.5  |  57.4  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof-r50_C5_1x_37.5.pth) |
 | YOLOF-R50-DC5_1x      |  800,1333  |  32   |  38.7  |  58.5  | [github](https://github.com/yjh0410/PyTorch_YOLOF/releases/download/YOLOF-weight/yolof-r50-DC5_1x_38.7.pth) |
 | YOLOF-R101-C5_1x      |  800,1333  |       |        |        | [github]() |
 | YOLOF-R101-DC5_1x     |  800,1333  |       |        |        | [github]() |
