@@ -1,6 +1,8 @@
 import numpy as np
 
 
+# ---------------------------- NMS ----------------------------
+## basic NMS
 def nms(bboxes, scores, nms_thresh):
     """"Pure Python NMS."""
     x1 = bboxes[:, 0]  #xmin
@@ -32,7 +34,7 @@ def nms(bboxes, scores, nms_thresh):
 
     return keep
 
-
+## class-agnostic NMS 
 def multiclass_nms_class_agnostic(scores, labels, bboxes, nms_thresh):
     # nms
     keep = nms(bboxes, scores, nms_thresh)
@@ -43,10 +45,10 @@ def multiclass_nms_class_agnostic(scores, labels, bboxes, nms_thresh):
 
     return scores, labels, bboxes
 
-
+## class-aware NMS 
 def multiclass_nms_class_aware(scores, labels, bboxes, nms_thresh, num_classes):
     # nms
-    keep = np.zeros(len(bboxes), dtype=np.int)
+    keep = np.zeros(len(bboxes), dtype=np.int32)
     for i in range(num_classes):
         inds = np.where(labels == i)[0]
         if len(inds) == 0:
@@ -63,7 +65,7 @@ def multiclass_nms_class_aware(scores, labels, bboxes, nms_thresh, num_classes):
 
     return scores, labels, bboxes
 
-
+## multi-class NMS 
 def multiclass_nms(scores, labels, bboxes, nms_thresh, num_classes, class_agnostic=False):
     if class_agnostic:
         return multiclass_nms_class_agnostic(scores, labels, bboxes, nms_thresh)
